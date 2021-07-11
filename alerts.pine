@@ -7,7 +7,7 @@ f_triggerSma()=>
     _cu = crossunder(close, _s)
     if _co
         alert("Price (" + tostring(close) + ") crossing up SMA (" + tostring(_s) + ")", alert.freq_once_per_bar)
-    else if _cu
+        else if _cu
         alert("Price (" + tostring(close) + ") crossing down SMA (" + tostring(_s) + ")", alert.freq_once_per_bar)
 f_triggerRsi()=>
     _r  = rsi(close, 7)
