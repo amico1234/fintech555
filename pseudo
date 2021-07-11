@@ -1,0 +1,219 @@
+//functions
+//arrays
+//erorrcode
+//orders
+//buy/sell
+//amount
+//begin hours
+//cubes
+//weekly
+
+
+***** jumbo, cmf ( best trades)
+
+
+**xle/vxxle , erx/ery junc 
+*** optional: snp, ndx, dow
+**optional:esg products
+**optional:ethanol, 
+*****order/exit , through steps $, $$ 
+*****trade two hours, trade two days
+**renko red/green
+***https://kodify.net/tradingview/orders/strategy-entry/
+//
+*** ***opec/orb quandali : https://www.tradingview.com/chart/unrxeX2f/
+//
+*https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm
+//
+* cl1
+*brentoil
+*oilcrude
+*wti
+*ukoil
+
+//
+*** 3 optyions from bazinga website
+//
+*volutility 
+*ery/ery
+*clean energy
+*dollar
+*options
+*sir
+*rigs
+*eia
+* https://www.quandl.com/search?filters=%5B%22Energy%22%5D
+//
+
+//snp, ndq, etf, vix, vxx
+// strategy more than 10y
+
+// backets(ann ai)
+// order: wait till if-else, on both securities.
+
+// *** 5 buy/sell orders, according to more insights. also in selling (20% each trade)
+// monday to thursday. friday till 16:15
+******* ATR between erx, ery
+***** stop-loss order (trailing stop-loss to protect profits), take profit (ai) // in script "beta_etc"
+
+** check every hour, that all happend in the hour frame. 
+*** from 13:00 to end trade day
+// https://kodify.net/tradingview/risks/maximum-position-size/
+// buy , drop: 5 transactions each
+//
+performance, erorr
+https://kodify.net/tradingview-programming-articles/#risk-management
+//
+
+
+// https://kodify.net/tradingview-programming-articles/#errors , alerts, riswk management, account trade no loop
+
+// , OTT (pre strategy), z score, bollinger: long term
+*** all swift conditions, must be on the same week 
+//
+Assignment: ← or :=    Example: c ← 2πr, c := 2πr 
+
+Sums, products: Σ Π    Example: h ←    Σa∈A    1/a
+
+//
+
+algorithm ford-fulkerson is
+    input: Graph G with flow capacity c, 
+           source node s, 
+           sink node t
+    output: Flow f such that f is maximal from s to t
+
+    (Note that f(u,v) is the flow from node u to node v, and c(u,v) is the flow capacity from node u to node v)
+
+    for each edge (u, v) in GE do
+        f(u, v) ← 0
+        f(v, u) ← 0
+
+    while there exists a path p from s to t in the residual network Gf do
+        let cf be the flow capacity of the residual network Gf
+        cf(p) ← min{cf(u, v) | (u, v) in p}
+        for each edge (u, v) in p do
+            f(u, v) ←  f(u, v) + cf(p)
+            f(v, u) ← −f(u, v)
+
+    return f
+//
+
+//
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © allanster
+
+//@version=4
+strategy(title = "How To Set Time Ranges", shorttitle = "Timed", overlay = true, precision = 8, max_bars_back = 200, pyramiding = 0, initial_capital = 100000, 
+     currency = currency.NONE, default_qty_type = strategy.cash, default_qty_value = 100000, commission_type = "percent", commission_value = 0.27)
+
+// Revision: 1
+// Author:   @allanster
+// Credit:   Special thanks to @LucF and @a.tesla2018 for help with including ':1234567' for time ranges on weekends        
+
+// === INPUT MA LENGTHS ===
+fastMA     = input(defval = 14,      title = "FastMA Length",   type = input.integer, minval = 1, step = 1)
+slowMA     = input(defval = 28,      title = "SlowMA Length",   type = input.integer, minval = 1, step = 1)
+
+// === INPUT DATE RANGE ===
+fromMonth  = input(defval = 1,       title = "From Month",      type = input.integer, minval = 1, maxval = 12)
+fromDay    = input(defval = 1,       title = "From Day",        type = input.integer, minval = 1, maxval = 31)
+fromYear   = input(defval = 2020,    title = "From Year",       type = input.integer, minval = 1970)
+thruMonth  = input(defval = 1,       title = "Thru Month",      type = input.integer, minval = 1, maxval = 12)
+thruDay    = input(defval = 1,       title = "Thru Day",        type = input.integer, minval = 1, maxval = 31)
+thruYear   = input(defval = 2112,    title = "Thru Year",       type = input.integer, minval = 1970)
+
+// === INPUT TIME RANGE ===
+entryTime  = input('0000-0000',      title = "Entry Time",      type = input.session)  // '0000-0000' is anytime to enter
+exitTime   = input('0000-0000',      title = "Exit Time",       type = input.session)  // '0000-0000' is anytime to exit
+
+// === INPUT SHOW PLOTS ===
+showDate   = input(true,             title = "Show Date Range", type = input.bool)
+showTimeE  = input(true,             title = "Show Time Entry", type = input.bool)
+showTimeX  = input(true,             title = "Show Time Exit",  type = input.bool)
+
+// === DATE & TIME RANGE FUNCTIONS ===
+isDate() =>                                                      // create function "within window of dates"
+    start  = timestamp(fromYear, fromMonth, fromDay, 00, 00)     // date start
+    finish = timestamp(thruYear, thruMonth, thruDay, 23, 59)     // date finish
+    isDate = time >= start and time <= finish                    // current date is "within window of dates"
+
+isTime(_position) =>                                             // create function "within window of time"
+    range  = time(timeframe.period, _position + ':1234567')      // current time is "within window of time"
+
+// === LOGIC ===
+enterLong  = crossover (sma(close, fastMA), sma(close, slowMA))  // enter when fastMA crosses over slowMA
+exitLong   = crossunder(sma(close, fastMA), sma(close, slowMA))  // exit when fastMA crosses under slowMA
+
+// === EXECUTION ===
+strategy.entry("L", strategy.long, when = isDate() and isTime(entryTime) and enterLong)  // enter "within window of dates and time" AND crossover
+strategy.close("L", when = isDate() and isTime(exitTime) and exitLong)                   // exit "within window of dates and time" AND crossunder         
+
+// === PLOTTING ===
+bgcolor(color = showDate and isDate() ? color.gray : na,                          transp = 90)  // plot "within window of dates"
+bgcolor(color = showTimeE and isDate() and isTime(entryTime) ? color.lime : na,   transp = 90)  // plot "within window of entry time"
+bgcolor(color = showTimeX and isDate() and isTime(exitTime)  ? color.purple : na, transp = 90)  // plot "within window of exit time"
+
+plot(sma(close, fastMA), title = 'FastMA', color = color.yellow, linewidth = 2, style = plot.style_line, transp = 0)  // plot FastMA
+plot(sma(close, slowMA), title = 'SlowMA', color = color.aqua,   linewidth = 2, style = plot.style_line, transp = 0)  // plot SlowMA
+
+//
+
+
+
+BEGIN
+NUMBER a, b, c, d, x1, x2
+INPUT a,b,c
+d = b^2-4ac
+IF (d >= 0) THEN
+      x1 = (-b+√d)/2a yada x1 = (-b+d^(1/2)/2a
+      x2 = (-b-√d)/2a yada x2 = (-b-d^(1/2)/2a
+      OUTPUT "ROOT 1:"+x1
+      OUTPUT "ROOT 2:"+x2
+ ELSE IF (d == 0) THEN 
+      x1=x2= -b/2a
+      OUTPUT "ROOT 1:"+x1
+      OUTPUT "ROOT 2:"+x2
+ELSE
+    OUTPUT "There is no real root"
+ENDIF 
+END
+
+
+
+
+
+BEGIN
+NUMBER a, b, c, d, x1, x2
+INPUT a,b,c
+d = b^2-4ac
+IF (d >= 0) THEN
+      x1 = (-b+√d)/2a yada x1 = (-b+d^(1/2)/2a
+      x2 = (-b-√d)/2a yada x2 = (-b-d^(1/2)/2a
+      OUTPUT "ROOT 1:"+x1
+      OUTPUT "ROOT 2:"+x2
+ ELSE IF (d == 0) THEN 
+      x1=x2= -b/2a
+      OUTPUT "ROOT 1:"+x1
+      OUTPUT "ROOT 2:"+x2
+ELSE
+    OUTPUT "There is no real root"
+ENDIF 
+END
+
+
+
+///
+
+
+FUNCTION linearSearch(list, searchTerm):
+     FOR index FROM 0 -> length(list):
+       IF list[index] == searchTerm THEN
+           RETURN index
+       ENDIF
+       ENDLOOP
+           RETURN -1
+END FUNCTION 
+
+
