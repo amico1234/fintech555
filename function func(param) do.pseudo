@@ -15,6 +15,9 @@ while (function
 }
 
 //parameters/ var
+//long, short cond
+//inputs
+//securities
 //data producers
 options
 short
@@ -25,5 +28,6 @@ etc.
 //alerts
 //alert cons 1
 Abucket1 ← ∈ alert1, alert2, alert3
-//function erx, erx (partam, var)
-//while loop to function per alert cons
+//function erx, erx (partam, var, long, short cond)
+//while / if, for loop to function per alert cons
+//function trade (long, short ← security a, b)
