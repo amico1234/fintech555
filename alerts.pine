@@ -1,4 +1,5 @@
 //@version=4
+//blabla
 study("alert() with multiple indicators", overlay=true)
 f_triggerSma()=>
     _s  = sma(close, 14)
