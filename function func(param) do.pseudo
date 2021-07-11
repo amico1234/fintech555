@@ -14,7 +14,19 @@ while (function
     
 }
 
-//parameters/ var
+//parameters
+trade comission
+when to trade
+etc.
+INPUT calc RANGE 
+how many daily
+account
+close position cond
+cond 1 -7 take position
+cond 1 -7 take profit
+timeframe to check all cond d/w
+//var
+//oschilators
 //long, short cond
 //inputs
 //securities
@@ -24,9 +36,8 @@ short
 fut
 volutility
 etc.
-//script
 //alerts
-//alert cons 1
+//alert cons 1 -7 long
 Abucket1 ← ∈ alert1, alert2, alert3
 //function erx, erx (partam, var, long, short cond)
 //while / if, for loop to function per alert cons
