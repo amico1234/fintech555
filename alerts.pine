@@ -1,0 +1,31 @@
+//@version=4
+study("alert() with multiple indicators", overlay=true)
+f_triggerSma()=>
+    _s  = sma(close, 14)
+    _co = crossover(close, _s)
+    _cu = crossunder(close, _s)
+    if _co
+        alert("Price (" + tostring(close) + ") crossing up SMA (" + tostring(_s) + ")", alert.freq_once_per_bar)
+    else if _cu
+        alert("Price (" + tostring(close) + ") crossing down SMA (" + tostring(_s) + ")", alert.freq_once_per_bar)
+f_triggerRsi()=>
+    _r  = rsi(close, 7)
+    _co = crossover(_r, 70)
+    _cu = crossunder(_r, 30)
+    if _co
+        alert("RSI (" + tostring(_r) + ") crossing up 70 level", alert.freq_once_per_bar)
+    else if _cu
+        alert("RSI (" + tostring(_r) + ") crossing down 30 level", alert.freq_once_per_bar)
+f_triggerMom()=>
+    _m  = mom(close, 14)
+    _co = crossover(_m, 0)
+    _cu = crossunder(_m, 0)
+    if _co
+        alert("Momentum (" + tostring(_m) + ")  crossing up 0 level", alert.freq_once_per_bar)
+    else if _cu
+        alert("Momentum (" + tostring(_m) + ")  crossing down 0 level", alert.freq_once_per_bar)
+
+plot(sma(close, 14), "SMA")
+f_triggerSma()
+f_triggerRsi()
+f_triggerMom()
