@@ -27,6 +27,7 @@ cond 1 -7 take position
 cond 1 -7 take profit
 timeframe to check all cond d/w
 how long trend, long etc.
+each alert two 8 hours
 //var
 //oschilators
 //long, short cond
