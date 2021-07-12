@@ -16,6 +16,7 @@ while (function
 
 //parameters
 trade comission
+recalculate after, strategy properties
 when to trade
 etc.
 INPUT calc RANGE 
@@ -37,6 +38,7 @@ short
 fut
 volutility
 etc.
+cl1, etha
 //scripts
 //alerts
 //alert cons 1 -7 long
@@ -44,3 +46,4 @@ Abucket1 ← ∈ alert1, alert2, alert3
 //function erx, erx (partam, var, long, short cond) , loop on param: how long trend
 //while / if, for loop to function per alert cons
 //function trade (long, short ← security a, b)
+only alerts, oschilators, alert erx, ery
