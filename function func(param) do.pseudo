@@ -28,6 +28,9 @@ cond 1 -7 take profit
 timeframe to check all cond d/w
 how long trend, long etc.
 each alert two 8 hours
+session alert
+session condition
+timestamp
 //var
 //oschilators
 //long, short cond
@@ -42,9 +45,33 @@ etc.
 cl1, etha
 //scripts
 //alerts
+cl1!
+technicals of cl1!
 //alert cons 1 -7 long
 Abucket1 ← ∈ alert1, alert2, alert3
 //function erx, erx (partam, var, long, short cond) , loop on param: how long trend
 //while / if, for loop to function per alert cons
 //function trade (long, short ← security a, b)
 only alerts, oschilators, alert erx, ery
+///////////////////////////////////////////////////////////////
+// fut: 
+If your script should only check closed bars, then include the barstate.isconfirmed variable in your bar comparisons.
+That variable returns true if the bar is closed (TradingView, n.d.).
+Should the bar still receive real-time price updates, then barstate.isconfirmed returns false.
+That way we know if we compare real-time prices or closing prices.
+
+So to check if the current real-time bar closed higher, we do:
+
+closeHigher = barstate.isconfirmed and (close > close[1])
+
+To see if the chart's most recent price bar closed lower we do:
+
+closeLower = barstate.isconfirmed and (close < close[1])
+
+And this code looks if the chart's last bar closed unchanged:
+
+closeUnchanged = barstate.isconfirmed and (close == close[1])
+
+In the same way we can use the barstate.isconfirmed variable with the other bar patterns we coded earlier in this article.
+
+//https://kodify.net/tradingview/bar-data/close-higher-lower/

@@ -1,0 +1,85 @@
+//@version=4
+//@author=LucF, for PineCoders
+ 
+// Alert Creation Framework - PineCoders FAQ
+//  v1.0, 2020.02.01 04:42 — LucF
+
+// PineCoders, Tools and ideas for all Pine coders: pinecoders.com
+
+// This script provides a framework to add alerts to a script.
+//  • Inputs allow the selection of any number of markers to plot on the chart.
+//  • A single alert for the indicator is used.
+//    It will trigger on the markers selected when the alert is configured.
+//    Users can thus create an alert based on any combination of the markers.
+//  • The marker's number will appear in the alert's message.
+//  • Alerts should normally be configured to trigger "Once Per Bar Close" to prevent false signals.
+
+// PineCoders FAQ & Code question linking here: http://www.pinecoders.com/faq_and_code/#how-do-i-make-an-alert-available-from-my-indicator
+// This indicator's TradingView page: 
+
+study("Alert Creation Framework - PineCoders FAQ")
+
+// ———————————————————— Inputs
+// {
+MD0 = "Both"
+MD1 = "Longs Only"
+MD2 = "Shorts Only"
+_2              = input(true,   "═════════ Alert Markers ══════════")
+markerDirection = input(MD0,    "Direction", options = [MD0, MD1, MD2])
+showMarker1     = input(true,   "1. Exit of OS")
+showMarker2     = input(true,   "2. Exit of OB")
+showMarker3     = input(true,   "3. Big move up")
+showMarker4     = input(true,   "4. Big move down")
+
+// Marker direction.
+longsOnly  = markerDirection == MD1
+shortsOnly = markerDirection == MD2
+// }
+
+
+// ———————————————————— Indicator calculations and plots
+// {
+// ►►►►► Your indicator code.
+s = (cci(rsi(close, 20), 40))
+ob =  100
+os = -100
+plot(s, "RSI of signal")
+hline(os)
+hline(ob)
+// }
+
+
+// ———————————————————— Markers and Alert
+// {
+// ————— Conditions
+// ►►►►► Define the conditions used to fire each marker here.
+C1U = crossover(s,  os)
+C2D = crossunder(s, ob)
+C3U = change(s, 4) >  100
+C4D = change(s, 4) < -100
+
+// ————— Assembly
+A1U = showMarker1 and not shortsOnly and C1U
+A2D = showMarker2 and not longsOnly  and C2D
+A3U = showMarker3 and not shortsOnly and C3U
+A4D = showMarker4 and not longsOnly  and C4D
+
+// ————— Plots
+var cMarkerUp = color.new(color.lime, 0)
+var cMarkerDn = color.new(color.red,  0)
+plotshape(A1U, "Marker 1 Up", shape.triangleup,     location.bottom,    cMarkerUp, size = size.tiny, text = "1")
+plotshape(A2D, "Marker 2 Dn", shape.triangledown,   location.top,       cMarkerDn, size = size.tiny, text = "2")
+plotshape(A3U, "Marker 3 Up", shape.triangleup,     location.bottom,    cMarkerUp, size = size.tiny, text = "3")
+plotshape(A4D, "Marker 4 Dn", shape.triangledown,   location.top,       cMarkerDn, size = size.tiny, text = "4")
+
+// Plot value of the marker's number without disrupting indicator scale. This doesn't plot anything in 
+// CAVEAT: If multiple markers fire simultaneously, only one will be detected.
+markerNo = A1U ? 1 : A2D ? 2 : A3U ? 3 : A4D ? 4 : 0
+plotchar(markerNo, "markerNo", "", location.top)
+
+// ————— Alert
+// ►►►►► Insert the abbreviation for your indicator here. This helps identify the source of the alert 
+//       in the "Create Alert" dropdown and in the "Alerts Log". Keep it short so it doesn't take up all the realestate in the log.
+indicatorAbbreviation = "ACF"
+alertcondition( A1U or A2D or A3U or A4D, indicatorAbbreviation + ": Configured Markers", indicatorAbbreviation + ': Marker {{plot("markerNo")}}')
+// }

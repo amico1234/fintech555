@@ -30,3 +30,8 @@ plot(sma(close, 14), "SMA")
 f_triggerSma()
 f_triggerRsi()
 f_triggerMom()
+
+
+///
+
+//https://www.tradingview.com/pine-script-docs/en/v4/essential/Alerts.html#background

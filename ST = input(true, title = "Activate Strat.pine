@@ -1,0 +1,80 @@
+ST = input(true, title = "Activate Strategy Tester")
+T_SY = input(2000, title = "Strategy Start Year")
+T_SM = input(5, title = "Start Month")
+T_SD = input(1, title = "Strategy Start Day")
+T_EY = input(2025, title = "Strategy End Year")
+T_EM = input(1, title = "End Month")
+T_ED = input(1, title = "Strategy End Day")
+T_S = timestamp(T_SY, T_SM, T_SD,00,00)
+T_E = timestamp(T_EY, T_EM, T_ED,00,00)
+T= ST and time >= T_S and time <= T_E 
+
+var bought = false
+longcondition = false
+shortcondition = false
+
+//once condition is met, send a buy alert and make "bought" equal to true  //to enable selling
+if (close <= 8600 and bought==false and T)
+    bought := true
+    longcondition :=true
+
+//once condition is met, sent a sell alert.
+if (bought and close>=9000 and T)  
+    shortcondition := true
+    bought := false
+
+alertcondition(longcondition,  "Long",  "Long")  
+alertcondition(shortcondition,  "short",  "short") 
+plotshape(longcondition,  title = "Buy",  text = 'Buy',  style = shape.labelup,   location = location.abovebar, color= color.green, textcolor = color.white, transp = 0, size = size.tiny)
+plotshape(shortcondition,  title = "Sell",  text = 'Sell',  style = shape.labelup,   location = location.belowbar, color= color.red, textcolor = color.white, transp = 0, size = size.tiny)
+// For debugging.
+plotchar(bought, "bought", "•", location = location.top)
+
+
+
+
+
+
+
+
+///////
+
+
+//Just to track first run
+
+firstrun := firstrun[1]
+
+
+if (firstrun == false)
+    bought := bought[1]
+
+//once condition is met, send a buy alert and make "bought" equal to true  //to enable selling
+
+if (close <= 8600 and bought==false and T)
+    bought := true
+    longcondition :=true
+
+alertcondition(longcondition,  "Long",  "Long")  
+
+plotshape(longcondition,  title = "Buy",  text = 'Buy',  style = shape.labelup,   location = location.abovebar, color= color.green, textcolor = color.white, transp = 0, size = size.tiny)
+
+
+if (longcondition)
+    longcondition :=false
+
+//once condition is met, sent a sell alert.
+
+if (bought and close>=9000 and T)  
+    shortcondition := true
+    bought := false
+
+alertcondition(shortcondition,  "short",  "short") 
+plotshape(shortcondition,  title = "Sell",  text = 'Sell',  style = shape.labelup,   location = location.belowbar, color= color.red, textcolor = color.white, transp = 0, size = size.tiny)
+
+
+if (shortcondition)
+    shortcondition :=false
+
+plotchar(bought, "bought", "", location = location.top)   
+
+firstrun := false

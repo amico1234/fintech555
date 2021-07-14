@@ -1,0 +1,79 @@
+
+Using compound conditions
+
+If we want to offer script users the possiblity of creating a single alert from a study using multiple alertcondition() calls,
+we will need to provide options in the script’s inputs through which users will indicate the conditions they want
+to trigger their alert before creating it.
+
+This script demonstrates one way to do it:
+
+//@version=4
+study("`alertcondition()` on multiple conditions")
+i_detectLongs  = input(true, "Detect Longs")
+i_detectShorts = input(true, "Detect Shorts")
+
+r = rsi(close, 20)
+// Detect crosses.
+xUp = crossover( r, 50)
+xDn = crossunder(r, 50)
+// Only generate entries when the trade's direction is allowed in inputs.
+enterLong  = i_detectLongs  and xUp
+enterShort = i_detectShorts and xDn
+
+plot(r)
+plotchar(enterLong,  "Go Long",  "▲", location.bottom, color.lime, size = size.tiny)
+plotchar(enterShort, "Go Short", "▼", location.top,    color.red,  size = size.tiny)
+hline(50)
+// Trigger the alert when one of the conditions is met.
+alertcondition(enterLong or enterShort, "Compound alert", "Entry")
+
+Note how the alertcondition() call is allowed to trigger on one of two conditions. Each condition can only trigger the alert if the user enables it in the script’s inputs before creating the alert.
+
+
+//
+// https://www.tradingview.com/pine-script-docs/en/v4/Debugging.html
+
+rogrammers needing to identify situations where more than one condition
+is met must build compound conditions by aggregating individual conditions using the and logical operator.
+Because compound conditions will only perform as expected if their individual conditions trigger correctly,
+you will save yourself many headaches if you validate the behavior of individual conditions before using a compound condition in your code.
+
+The state of multiple individual conditions can be displayed using a technique like this one, where four individual conditions are used
+to build our bull compound condition:
+
+//@version=4
+study("Compound conditions")
+i_period    = input(20)
+i_bullLevel = input(55)
+
+r = rsi(close, i_period)
+
+// Condition #1.
+rsiBull = r > i_bullLevel
+// Condition #2.
+hiChannel = highest(r, i_period * 2)[1]
+aboveHiChannel = r > hiChannel
+// Condition #3.
+channelIsOld = hiChannel >= hiChannel[i_period]
+// Condition #4.
+historyIsBull = sum(rsiBull ? 1 : -1, i_period * 3) > 0
+// Compound condition.
+bull = rsiBull and aboveHiChannel and channelIsOld and historyIsBull
+
+hline(i_bullLevel)
+plot(r, "RSI", color.black)
+plot(hiChannel, "High Channel")
+
+plotchar(rsiBull ? i_bullLevel : na, "rIsBull", "1", location.absolute, color.green, size = size.tiny)
+plotchar(aboveHiChannel ? r : na, "aboveHiChannel", "2", location.absolute, size = size.tiny)
+plotchar(channelIsOld, "channelIsOld", "3", location.bottom, size = size.tiny)
+plotchar(historyIsBull, "historyIsBull", "4", location.top, size = size.tiny)
+bgcolor(bull ? not bull[1] ? color.new(color.green, 50) : color.green : na)
+
+
+
+    We use a plotchar() call to display each condition’s number, taking care to spread them over the indicator’s y space so they don’t overlap.
+    The first two plotchar() calls use absolute positioning to place the condition number so that it helps us remember the corresponding condition. The first one which displays “1” when RSI is higher than the user-defined bull level for example, positions the “1” on the bull level.
+    We use two different shades of green to color the background: the brighter one indicates the first bar where our compound condition becomes true, the lighter green identifies subsequent bars where our compound condition continues to be true.
+    While it is not always strictly necessary to assign individual conditions to a variable because they can be used directly in boolean expressions, it makes for more readable code when you assign a condition to a variable name that will remind you and your readers of what it represents. Readability considerations should always prevail in cases like this one, where the hit on performance of assigning conditions to variable names is minimal or null.
+
