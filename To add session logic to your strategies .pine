@@ -1,0 +1,107 @@
+To add session logic to your strategies you have to do 2 things:
+
+    Add “not na(t)” condition to all your entries. You can use “and” logical operator for that.
+    Add the following code to close/cancel all positions/orders: 
+
+1
+2
+3
+	
+if (na(t))
+    strategy.cancel_all()
+    strategy.close_all()
+
+As you can see it’s a pretty easy way to do that.
+
+Entire code you can find here:
+1
+2
+3
+4
+//@version=4
+strategy("MA Strategy", overlay=true)
+ 
+// MA Inputs 
+ma_fast_length = input(5)
+ma_slow_length = input(25)
+ 
+session = input("0900-1700:1234567")
+ 
+t = time(timeframe.period, session)
+ 
+bgcolor(not na(t) ? color.green : na)
+ 
+ma_fast = sma(close, ma_fast_length)
+ma_slow = sma(close, ma_slow_length)
+ 
+plot(ma_fast, color = color.red,  linewidth = 2)
+plot(ma_slow, color = color.blue, linewidth = 2)
+ 
+strategy.entry("long",  strategy.long,  when = crossover(ma_fast, ma_slow)  and not na(t))
+strategy.entry("short", strategy.short, when = crossunder(ma_fast, ma_slow) and not na(t))
+ 
+if (na(t))
+    strategy.cancel_all()
+    strategy.close_all()
+
+
+    ///////////
+
+
+
+As your alert in your strategy script is always triggered by some condition, you can create some var variable, and store time where this alert condition was true.
+
+var int alert_last_trigger_time = na
+
+if alert_condition 
+    alert( .....)
+    alert_last_trigger_time := time
+
+duration = time - alert_last_trigger_time
+
+And then you can check if is your duration < than 8 hours to enter in position
+///////
+
+
+See the Pine usrman on alerts for an explanation of how you can build a compound condition on one alertcondition() call.
+https://www.tradingview.com/pine-script-docs/en/v4/essential/Alerts.html#using-compound-conditions
+
+Using the new alert() function would probably easier, 
+as you can aggregate all alert() call events in your script in one alert on your chart,
+and use dynamic messages for your alerts. The same usrman page explains how to use alert() in a few different scenarios
+
+//
+
+https://quantnomad.com/2020/12/08/adding-backtesting-range-to-tradingview-strategy-in-3-lines-of-code/
+
+//@version=4
+strategy("MA Strategy", overlay=true)
+ 
+// MA Inputs 
+ma_fast_length = input(5)
+ma_slow_length = input(25)
+ 
+//////////////////////////////////////////////////////////////
+ 
+// Calculate start/end date and time condition
+startDate  = input(timestamp("2019-01-01T00:00:00"), type = input.time)
+finishDate = input(timestamp("2021-01-01T00:00:00"), type = input.time)
+ 
+time_cond  = time >= startDate and time <= finishDate
+ 
+//////////////////////////////////////////////////////////////
+ 
+ma_fast = sma(close, ma_fast_length)
+ma_slow = sma(close, ma_slow_length)
+ 
+plot(ma_fast, color = color.red,  linewidth = 2)
+plot(ma_slow, color = color.blue, linewidth = 2)
+ 
+//////////////////////////////////////////////////////////////
+ 
+strategy.entry("long",  strategy.long,  when = crossover(ma_fast, ma_slow)  and time_cond)
+strategy.entry("short", strategy.short, when = crossunder(ma_fast, ma_slow) and time_cond)
+     
+if (not time_cond)
+    strategy.close_all()
+    strategy.cancel_all()

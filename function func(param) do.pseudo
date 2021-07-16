@@ -32,6 +32,12 @@ session alert
 session condition
 timestamp
 time for conditions, per level. first 3 hours at least,  layer 7 , only 30 minutes
+session: https://quantnomad.com/2021/01/31/the-easiest-way-to-add-a-session-to-pinescript-strategies/
+
+session = input("0900-1700:1234567")
+t = time(timeframe.period, session)
+
+
 //var
 //oschilators
 //long, short cond
