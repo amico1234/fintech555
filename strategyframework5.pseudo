@@ -74,13 +74,15 @@ plot(VIM, title="VI -", color=#FF006E)
 
 
 //Insight conditions, logic
+
+// each is a variable
 var TsiRegInBuyLong1 // (TsiRegInsight == "erx" up -25 or up 0 or up 25) AND (TSIreg == "ery" down -25 or down 0 or down 25)
 var TsiRegInBuyShort1 // (TsiRegInsight == "ery" up -25 or up 0 or up 25) AND (TSIreg == "erx" down -25 or down 0 or down 25)
 
 
 // Insights of Inpts
 
-ATR vxxle 
+******* ATR vxxle  
 
 // securities/inputs/param conditions
 
