@@ -206,14 +206,36 @@ END
 
 ///
 
+// function to check if attribute/cond is in its valid time/date
+
 
 FUNCTION linearSearch(list, searchTerm):
-     FOR index FROM 0 -> length(list):
-       IF list[index] == searchTerm THEN
-           RETURN index
-       ENDIF
-       ENDLOOP
+    FOR index FROM 0 -> length(list):
+        IF list[index] == searchTerm THEN
+            RETURN index
+        ENDIF
+    ENDLOOP
            RETURN -1
 END FUNCTION 
 
 
+//
+
+
+part1       long        attributeLongArray1        validation      comment
+part2       long        attributeLongArray2        validation      comment
+part3       long        attributeLongArray3        validation      comment
+part4       long        attributeLongArray4        validation      comment
+part5       long        attributeLongArray5        validation      comment
+part6       long        attributeLongArray6        validation      comment
+part7       long        attributeLongArray7        validation      comment
+
+
+
+part8       short        attributeShortArray8        validation      comment
+part9       short        attributeShortArray9        validation      comment
+part10      short        attributeShortArray10       validation      comment
+part11      short        attributeShortArray11       validation      comment
+part12      short        attributeShortArray12       validation      comment
+part13      short        attributeShortArray13       validation      comment
+part14      short        attributeShortArray14       validation      comment

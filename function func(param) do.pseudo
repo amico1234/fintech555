@@ -17,7 +17,7 @@ while (function
 //parameters
 trade comission
 recalculate after, strategy properties
-when to trade
+when to trade: pinescript referance
 etc.
 INPUT calc RANGE 
 how many daily
@@ -37,10 +37,29 @@ session: https://quantnomad.com/2021/01/31/the-easiest-way-to-add-a-session-to-p
 session = input("0900-1700:1234567")
 t = time(timeframe.period, session)
 
+*** "histort ref oper", so aler cond, omly afer time + better than 2-3 days
 
-//var
+** also can use:
+
+
+"rising"
+Test if the x series is now rising for y bars long.
+rising(source, length) → series[bool]
+Returns
+true if current x is greater than any previous x for y bars back, false otherwise.
+Arguments
+source (series[float]) Series of values to process.
+length (series[integer]) Number of bars (length).
+
+////////
+
+
+******* check for h/d/w/ before trade
+
+//var (not reseted oin evedry calc)
 //oschilators
 //long, short cond
+//arrays (alrt cond etc.)
 //inputs
 epd
 fut
@@ -48,8 +67,10 @@ volutility
 comodety: wti
 ery
 xle, etf
-esg?
+esg? 
+(etf "frak", "crbn", corell)
 air oil?
+djcien (corell, roc tech)
 //securities
 //data producers
 options
@@ -58,6 +79,7 @@ fut
 volutility
 etc.
 cl1, etha
+// corellat to comodetym fut etc (ohlc): https://www.youtube.com/watch?v=kbW7XO-2LnY
 //scripts
 //alerts
 cl1!
