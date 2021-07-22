@@ -1,0 +1,102 @@
+// var param
+var  MinSecCorellLong   // 0.89
+var  MinSecCorellShort // -0.89
+var  SecCorellLengh // 5D
+// ======= only highly corellated insight can paricipate, otherwise, they are not in the If-Else ======= //
+
+
+
+var wg //w graph
+var dg //d graph
+
+var TechInshightUpTime
+var SecurityUpTime
+var SecurityDownTime
+var TradeBetween
+
+
+// inputs
+EtfLong // Default: ERX
+EtfShort // Default: ERY
+Commodety1 // Default
+Commodety2 // Default
+Fut1 // Default
+Fut2 // Default
+Volutility1 // Default: vxxle
+Volutility2 // Default: ovx
+Ind1 // Default: xle
+Ind2 // Default: djcien
+Ind3 // Default: djuscl
+SecurityLongSync1 // Default: BP
+SecurityLongSync2
+SecurityShortSync1
+SecurityShortSync2
+MimicEtfLong1 //Default: "dig"
+MimicEtfLong2
+MimicEtfShort1 ////Default: "dug"
+MimicEtfSjort2
+MimicEtfLOngReg //Default: frak
+
+//ratio
+
+erx/ery (EtfLong/EtfShort)
+
+erx/ovx
+erx/vxxle
+ery/ovx
+ery/vxxle
+
+
+// insights list
+//insights rank 
+
+
+//financial var
+
+// ======= TSIreg ======= //
+
+TsiRegr=input(25, title="Momentum Smoothing 1")
+TsiRegs=input(13, title="Momentum Smoothing 2")
+src=close
+TsiRegm=src-src[1]
+TsiRegInsight=100*(ema(ema(TsiRegm,TsiRegr),TsiRegs)/ema(ema(abs(TsiRegm), TsiRegr),TsiRegs))
+
+// ======= Vortex ======= //
+study(title = "Vortex Indicator", shorttitle="VI", format=format.price, precision=4, resolution="")
+period_ = input(14, title="Length", minval=2)
+VMP = sum( abs( high - low[1]), period_ )
+VMM = sum( abs( low - high[1]), period_ )
+STR = sum( atr(1), period_ )
+VIP = VMP / STR
+VIM = VMM / STR
+plot(VIP, title="VI +", color=#3BB3E4)
+plot(VIM, title="VI -", color=#FF006E)
+
+
+//Insight conditions, logic
+var TsiRegInBuyLong1 // (TsiRegInsight == "erx" up -25 or up 0 or up 25) AND (TSIreg == "ery" down -25 or down 0 or down 25)
+var TsiRegInBuyShort1 // (TsiRegInsight == "ery" up -25 or up 0 or up 25) AND (TSIreg == "erx" down -25 or down 0 or down 25)
+
+
+// Insights of Inpts
+
+ATR vxxle 
+
+// securities/inputs/param conditions
+
+var EtfLongUp //etf long is up
+var EtfLongDown
+var EtfShortUp
+var EtfShortDown
+var Commodety1Up
+var Commodety1Down
+
+ATR vxxle > [-1]
+
+//conditions, before trade
+
+
+// ======= only highly corellated insight can paricipate, otherwise, they are not in the If-Else ======= //
+// example: cl1! with erx/ery
+// example: wti with erx/ery
+
