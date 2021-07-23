@@ -124,6 +124,8 @@ var Commodety1Down
 
 ATR vxxle > [-1]
 
+alertcondition(close > open, title='Alert on Green Bar', message='Green Bar!')
+
 //conditions, before trade
 
 
