@@ -10,6 +10,22 @@ var wg //w graph
 var dg //d graph
 
 var TechInshightUpTime
+//=======
+As your alert in your strategy script is always triggered by some condition,
+you can create some var variable, and store time where this alert condition was true.
+
+var int alert_last_trigger_time = na
+
+if alert_condition 
+    alert( .....)
+    alert_last_trigger_time := time
+
+duration = time - alert_last_trigger_time
+
+And then you can check if is your duration < than 8 hours to enter in position
+
+// 
+
 var SecurityUpTime
 var SecurityDownTime
 var TradeBetween
