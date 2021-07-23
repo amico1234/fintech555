@@ -4,6 +4,8 @@ var  MinSecCorellShort // -0.89
 var  SecCorellLengh // 5D
 // ======= only highly corellated insight can paricipate, otherwise, they are not in the If-Else ======= //
 
+// var aa= engind > 0 ( 7 hours)
+///var aaa= engind techinsightalert alert (5 hours)
 
 
 var wg //w graph
