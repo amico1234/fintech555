@@ -38,6 +38,18 @@ var EtfIndDailyLong
 var EtfIndDailyShort
 var EtfDailyShort
 
+
+//ext input
+
+rig count
+sir
+options
+beta
+gamma
+eia p/c
+eia istirical
+
+
 // inputs
 EtfLong // Default: ERX
 EtfShort // Default: ERY
