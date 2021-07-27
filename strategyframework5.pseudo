@@ -91,7 +91,7 @@ erx vs ery - rank7
 //insights rank 
 
 1 (tsoext, ott, supply demend)
-7 (tsireg, vortex, vigor, zgraph, one two graph daily )
+7 (vortex, vigor, zgraph, rvgi, one two graph daily )
 
 //financial var
 
@@ -163,3 +163,78 @@ plotchar(xUp, "xUp", "▲", location.top, size = size.tiny)
 // example: cl1! with erx/ery
 // example: wti with erx/ery
 
+/////
+
+// Only plot the instrument's volume during
+// Sunday's and Monday's sessions
+newWeek = (dayofweek == sunday) or (dayofweek == monday)
+
+
+///
+
+// The iff() function requires three arguments and has the following syntax (Pine Script Language Tutorial, n.d.):
+
+// iff(condition, result1, result2)
+
+// The iff() function returns a value that depends on
+// its condition: when the condition evaluates to true, result1 is returned; otherwise, result2 is returned
+
+
+// /////
+
+// few iff:
+// https://kodify.net/tradingview/operators/iff-function/
+// The iff() function can also be nested in order to evaluate several conditions
+
+
+/////
+
+
+// STEP 1:
+// Make input options that configure backtest date range
+startDate = input(title="Start Date", type=input.integer,
+     defval=1, minval=1, maxval=31)
+startMonth = input(title="Start Month", type=input.integer,
+     defval=1, minval=1, maxval=12)
+startYear = input(title="Start Year", type=input.integer,
+     defval=2019, minval=1800, maxval=2100)
+
+endDate = input(title="End Date", type=input.integer,
+     defval=1, minval=1, maxval=31)
+endMonth = input(title="End Month", type=input.integer,
+     defval=7, minval=1, maxval=12)
+endYear = input(title="End Year", type=input.integer,
+     defval=2025, minval=1800, maxval=2100)
+
+// STEP 2:
+// Look if the close time of the current bar
+// falls inside the date range
+inDateRange = (time >= timestamp(syminfo.timezone, startYear,
+         startMonth, startDate, 0, 0)) and
+     (time < timestamp(syminfo.timezone, endYear, endMonth, endDate, 0, 0))
+
+// Calculate strategy values
+emaValue = ema(close, 20)
+
+plot(series=emaValue, color=color.teal, linewidth=2)
+
+// Set trade entry conditions
+enterLong  = (close > close[1]) and crossover(close, emaValue)
+enterShort = (close < close[1]) and crossunder(close, emaValue)
+
+// STEP 3:
+// Submit entry orders, but only when bar is inside date range
+if (inDateRange and enterLong)
+    strategy.entry(id="EL", long=true)
+
+if (inDateRange and enterShort)
+    strategy.entry(id="ES", long=false)
+
+// STEP 4:
+// Exit open market position when date range ends
+if (not inDateRange)
+    strategy.close_all()
+
+
+    /////// change indicator with plot no title
+    p0 = plot(plt, title="RVI", style=plot.style_histogram, color=col, linewidth=3, transp=0)
