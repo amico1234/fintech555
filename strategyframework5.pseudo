@@ -2,6 +2,7 @@
 var  MinSecCorellLong   // 0.89
 var  MinSecCorellShort // -0.89
 var  SecCorellLengh // 5D
+
 // ======= only highly corellated insight can paricipate, otherwise, they are not in the If-Else ======= //
 
 // var aa= engind > 0 ( 7 hours)
@@ -11,7 +12,7 @@ var  SecCorellLengh // 5D
 //STRATEGY RULES
 LIMIT trade
 NUMMBER OF TRADES
-
+VAR INCLUDE POST MARKET = true
 
 var wg //w graph
 var dg //d graph
