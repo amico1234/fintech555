@@ -8,6 +8,11 @@ var  SecCorellLengh // 5D
 ///var aaa= engind techinsightalert alert (5 hours)
 
 
+//STRATEGY RULES
+LIMIT trade
+NUMMBER OF TRADES
+
+
 var wg //w graph
 var dg //d graph
 
