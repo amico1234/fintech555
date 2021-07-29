@@ -244,3 +244,5 @@ if (not inDateRange)
 
     /////// change indicator with plot no title
     p0 = plot(plt, title="RVI", style=plot.style_histogram, color=col, linewidth=3, transp=0)
+
+    // EARNUINGS OF OIL STOCKS
