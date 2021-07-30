@@ -9,6 +9,8 @@ var  SecCorellLengh // 5D
 ///var aaa= engind techinsightalert alert (5 hours)
 
 
+var inflation
+
 //STRATEGY RULES
 LIMIT trade
 NUMMBER OF TRADES
@@ -55,6 +57,8 @@ gamma
 eia p/c
 eia istirical
 
+game plan: wti 63 to 75
+inflatio adjust
 
 // inputs
 EtfLong // Default: ERX
