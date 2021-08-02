@@ -8,8 +8,13 @@ var  SecCorellLengh // 5D
 // var aa= engind > 0 ( 7 hours)
 ///var aaa= engind techinsightalert alert (5 hours)
 
-
+//inflation
 var inflation
+
+//ppi, etc. ( corell ?)
+
+// accumelate program, short term program, long term program
+
 
 //STRATEGY RULES
 LIMIT trade
