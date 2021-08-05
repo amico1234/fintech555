@@ -87,6 +87,9 @@ MimicEtfShort1 ////Default: "dug"
 MimicEtfSjort2
 MimicEtfLOngReg //Default: frak
 
+
+// ETF OF FUT
+VAR EtfFut //sco , maybe vs other etf
 //ratio
 
 erx/ery (EtfLong/EtfShort)
@@ -105,8 +108,11 @@ erx vs ery - rank7
 // insights list
 //insights rank 
 
-1 (tsoext, ott, supply demend, fvg trend, logistic)
-7 (vortex, emplied volatility, zgraph, rvgi, one two graph daily )
+7 (??? zgraph, rvgi, one two graph daily )
+
+*RENKO, RENKO STRATEGY
+**JUMBO TRADE, emplied volatility, erx goes ery daily
+***JUMBO RED GREEN, BJ TSI, SUPPLY DE, FVG TREND, LOGISTIC, LOGISTIC diff, IIOT, RSI_LB
 
 //financial var
 
