@@ -1,0 +1,123 @@
+//@version=4
+//
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © kruskakli
+// -----------
+// The Squeeze Panel makes use of a Bollinger Band and a Keltner Channel to identify
+// a range that are compressed, or "squeezed". This is defined as when the BB is enclosed
+// within the KC. 
+//
+// The idea is that a major break out could be expected at the end of the Squeeze.
+//
+// But the "squeeze" doesn't say anything about which direction the breakout will take.
+// One suggestion is that the breakout will follow the current trend, so to aid with
+// this a Linear Regression calculation try to show where the trend might be going.
+// 
+// But since we already have Wave A/B/C that indicates the short/medium/long trend
+// a better alternative for the immediate breakout direction could be the Money Flow Index.
+// MFI is commonly used to monitor the flow of money and/or momentum; a value above 50
+// may indicate a Buy pressure and vice versa.
+//
+// CREDITS
+// -------
+// Keltner code taken from: LazyBear
+// Wave A/B/C code taken from: UCSGEARS
+// The panel idea taken from: lejmer
+// Using MFI to spot the breakout: "The Secret Mindset" (Youtube Channel)
+//
+study("Squeeze Panel", overlay=false)
+
+length = input(defval=20,    title="BB Length",     type=input.integer)
+mult = input(defval=2.0,     title="BB MultFactor", type=input.float)
+lengthKC = input(defval=20,  title="KC Length",     type=input.integer)
+multKC = input(defval=1.5,   title="KC MultFactor", type=input.float)
+
+brk_ind = input(defval="MFI", title="Breakout direction indicator", options=["MFI","LinReg"], type=input.string)
+sq_lreg_len = input(defval=51, title="LinReg Length", type=input.integer)
+mfi_len = input(defval=7, title="Money Flow Index Length", type=input.integer)
+
+waveALength = input(title="Wave A Length", type=input.integer, defval=34, minval=0)
+waveBLength = input(title="Wave B Length", type=input.integer, defval=89, minval=0)
+waveCLength = input(title="Wave C Length", type=input.integer, defval=144, minval=0)
+
+// Calculate BB
+source = close
+[basis, upperBB, lowerBB] = bb(close, length, mult)
+
+// Calculate KC
+// https://www.investopedia.com/terms/k/keltnerchannel.asp
+ma = ema(hlc3, lengthKC)
+range = atr(lengthKC)
+rangema = ema(range, lengthKC)
+upperKC = ma + rangema * multKC
+lowerKC = ma - rangema * multKC
+
+sqzOn  = (lowerBB > lowerKC) and (upperBB < upperKC)
+sqzOff = (lowerBB < lowerKC) and (upperBB > upperKC)
+noSqz  = (sqzOn == false) and (sqzOff == false)
+
+val = linreg(source  -  avg(avg(highest(high, sq_lreg_len), lowest(low, sq_lreg_len)),sma(close,sq_lreg_len)), sq_lreg_len,0)
+
+MFI = mfi(hlc3, mfi_len)
+
+// Use Green/Red that works for a color blind!
+green1 = color.new(#00ff00, 0)
+green2 = color.new(#00ee00, 0)
+green3 = color.new(#00cd00, 0)
+
+orangered1 = color.new(#ff4500, 0)
+orangered2 = color.new(#ee4000, 0)
+orangered3 = color.new(#cd3700, 0)
+
+bcolor = iff( val > 0,
+         iff( val > nz(val[1]), green2, green3),
+         iff( val < nz(val[1]), orangered3, orangered2))
+scolor = sqzOn ? color.white : color.gray
+
+mfi_clr = MFI > 50 ? green2 : orangered2
+
+
+// Wave A
+afastMA1 = ema(close, 8)
+aslowMA1 = ema(close, waveALength)
+amacd1 =  afastMA1 - aslowMA1
+asignal1 = ema(amacd1, waveALength)
+ahist1 =  amacd1 - asignal1
+wa = ahist1
+
+// Wave B
+bfastMA1 = ema(close, 8)
+bslowMA1 = ema(close, waveBLength)
+bmacd1 =  bfastMA1 - bslowMA1
+bsignal1 = ema(bmacd1, waveBLength)
+bhist1 =  bmacd1 - bsignal1
+wb = bhist1
+
+// Wave C
+cfastMA1 = ema(close, 8)
+cslowMA1 = ema(close, waveCLength)
+
+cmacd1 =  cfastMA1 - cslowMA1
+csignal1 = ema(cmacd1, waveCLength)
+chist1 =  cmacd1 - csignal1
+wc = chist1
+
+// Plotting
+
+bw_squeeze_bar_clr = scolor
+bw_wz_bar_clr = brk_ind == "MFI" ? mfi_clr : bcolor
+bw_wa_bar_clr = wa > 0 ? green2 : wa < 0 ? orangered2 : color.black
+bw_wb_bar_clr = wb > 0 ? green2 : wb < 0 ? orangered2 : color.black
+bw_wc_bar_clr = wc > 0 ? green2 : wc < 0 ? orangered2 : color.black
+
+bw_squeeze_bar = 5
+bw_wz_bar = 4
+bw_wa_bar = 3
+bw_wb_bar = 2
+bw_wc_bar = 1
+
+plot(bw_squeeze_bar, title="Squeeze", color = bw_squeeze_bar_clr, transp = 0, style = plot.style_columns)
+plot(bw_wz_bar, title="Breakout Direction", color = bw_wz_bar_clr, transp = 0, style = plot.style_columns)
+plot(bw_wa_bar, title="Wave A", color = bw_wa_bar_clr, transp = 0, style = plot.style_columns)
+plot(bw_wb_bar, title="Wave B", color = bw_wb_bar_clr, transp = 0, style = plot.style_columns)
+plot(bw_wc_bar, title="Wave C", color = bw_wc_bar_clr, transp = 0, style = plot.style_columns)
