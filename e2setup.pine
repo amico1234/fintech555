@@ -1,0 +1,933 @@
+// Created by e2e4mfck for tradingview.com 
+// 
+// ♚
+// @version=4  
+
+//-----------------------------------------------------------------
+// Title {
+study("­[e2] Setup 1.5", "­[e2] Setup", true, max_bars_back = 3000)
+// }
+
+//-----------------------------------------------------------------
+// Inputs {
+// --- Fibonacci {
+// --- Fibonacci Extension {
+var float fi = (sqrt(5) + 1) / 2., var float fi2 = fi + 1, var float fi3 = fi2 + fi, var float fi4 = fi3 + fi2
+// --- }
+// --- Fibonacci Reload {
+var float fa = fi - 1, var float fb = sqrt(fa), var float fc = sqrt(fb), var float fd = .5, var float fe = pow(fa, 2), var float ff = pow(fa, 3), var float fg = pow(fa, 4)
+// --- }
+// }
+
+var bool    i_pfSw          = input(true,  "===============⥑ Price flip ⥏================")
+var bool    i_pfLine        = input(true,   "Show Price Flip Line")
+var bool    i_pfArrows      = input(false,  "Show Price Flip Arrows")
+
+var bool    i_setSw         = input(true,   "===============⥑ Setup ⥏===================") 
+var int     i_setLb         = input(4,      " 》 Setup Lookback Period")
+var int     i_setCl         = input(9,      " 》 Setup Count Limit")
+var string  i_setMode       = input("Start a new Setup",    " 》 Count Limit reached, next?", 
+                              options = ["Start a new Setup", "Continue the count", "Stop"])
+var string  i_setLoc        = input("Abovebar",             " 》 Setup Number Location", 
+                              options = ["Abovebar", "Belowbar", "Buy - Above, Sell - Below", "Buy - Below, Sell - Above"])
+var bool    i_setReplace    = input(false,  " Replace non exceeding setup number with '▪' sign")
+var bool    i_setArrows     = input(true,   " Show Setup Arrows")
+var bool    i_setOnlyCl     = input(true,   " Show Only Completed Setup")
+var bool    i_setPerf       = input(true,   " Show Setup Perfection")
+var bool    i_setInt        = input(true,   " Show Setup Intersection")
+var bool    i_setStealth    = input(true,   " Show Stealth Setup")
+var bool    i_setDouble     = input(true,   " Show Double Setup")
+var bool    i_setTriple     = input(true,   " Show Triple Setup")
+var bool    i_setRisk       = input(true,   "Show Setup Risk Level")
+var float   i_setRiskFactor = input(1,      " 》 Setup Risk Level Multiplier", minval = 0.1, maxval = 10, step = 0.1)
+
+var bool    i_trend         = input(true,   "===============⥑ Trend ⥏===============")
+var bool    i_trendSRSw     = input(true,   "Show Trend Support and Resistance")
+var bool    i_trendRlz      = input(true,   "Show Trend Reload Zone")
+var float   i_rlzFact1      = input(fa,     " 》 Trend Reload Zone Factor 1",   options = [fc, fb, fa, fd, fe, ff, fg])
+var float   i_rlzFact2      = input(fb,     " 》 Trend Reload Zone Factor 2",   options = [fc, fb, fa, fd, fe, ff, fg])
+var bool    i_trendExt      = input(true,   "Show Trend Extension")
+var float   i_extFact1      = input(fi,     " 》 Trend Extension Factor 1",     options = [1, fi, fi2, fi3, fi4])
+var float   i_extFact2      = input(fi2,    " 》 Trend Extension Factor 2",     options = [fi, fi2, fi3, fi4])
+var int     i_rlzExtTr      = input(90,     "Reload and Extension zone transparency", minval = 0, maxval = 100, step = 1)
+
+
+var bool    i_labels        = input(true,   "===============⥑ Labels ⥏===============")
+var bool    i_statHide      = input(false,  "Hide Statistics in Tooltip")
+var bool    i_statsSet      = input(true,   "Show Setup statistics")
+var bool    i_statsRect     = input(true,   "Show Setup rectangles")
+var int     i_offsetLabels  = input(3,      " 》 Label Horizontal Offset")
+var bool    i_statsTrend    = input(true,   "Show Trend statistics")
+var bool    i_statsRisk     = input(true,   "Show Risk statistics")
+
+var int     i_setTr1        = 0 //input(0,      " 》 Setup transperency for numbers")
+var int     i_setTr2        = 0 //input(0,      " 》 Setup transperency for '•'")
+var int     i_pfLb          = i_setLb //input(4,      " 》 Price Flip Lookback Period")
+var int     i_pfShf         = 1 //input(1,      " 》 Price Flip Shift")
+
+// --- Sources {
+src0 = open, src1 = high, src2 = low,   src3 = close 
+src4 = hl2,  src5 = hlc3, src6 = ohlc4, src7 = tr 
+vol  = volume
+// --- }
+// }
+
+//-----------------------------------------------------------------
+// Price Flip {
+
+// --- Price flip function {
+f_priceFlip(_src, _lb, _shift) =>
+    bool _priceFlipUp = _src <= _src[_lb] and _src[_shift] > _src[_lb + _shift]
+    bool _priceFlipDn = _src >  _src[_lb] and _src[_shift] < _src[_lb + _shift]
+    [_priceFlipUp, _priceFlipDn]
+// --- }
+
+// --- Price flip Declaration {
+[pfDn, pfUp] = f_priceFlip(src3, i_setLb, i_pfShf)
+
+var bool priceFlip = na
+if pfUp
+    priceFlip := true
+else if pfDn
+    priceFlip := false
+else
+    priceFlip := na
+
+priceFlipLine = valuewhen(src3[i_pfLb], src3, 0)
+// --- }
+
+// }
+
+//-----------------------------------------------------------------
+// Setup {
+
+// --- Setup Mode {
+var bool setStart = false, var bool setCont  = true
+
+if i_setMode == "Start a new Setup"
+    setStart := true 
+    setCont := false
+else if i_setMode == "Continue the count"
+    setStart := true 
+    setCont := true
+else if i_setMode == "Stop"
+    setStart := false
+    setCont := false
+// --- }
+
+// --- Setup function {
+f_set(_src, _lb, _cl, _flip, _cont, _start) =>
+    int _buy  = 0, int _buyCont  = 0 
+    int _sell = 0, int _sellCont = 0
+    
+    var bool _uptrend = na
+    _uptrend := _flip ? true : _flip == false ? false : _uptrend[1] 
+
+    if _buy[1] == _cl
+        _buyCont  := _buyCont + 1
+        _sellCont := 0
+    else if _sell[1] == _cl
+        _buyCont  := 0
+        _sellCont := _sellCont + 1
+    else
+        _buyCont  := _buyCont[1]
+        _sellCont := _sellCont[1]
+    
+    if _flip
+        _buyCont := 0
+    else if _flip == false
+        _sellCont := 0
+    
+    // Buy Setup Count    
+    if _src <= _src[_lb] and not _uptrend
+        _buy := _buy[1] + 1
+        if _buyCont > 0
+            if not _start
+                _buy := 0
+            else if _buy[1] == _cl and not _cont
+                _buy := 1
+    
+    // Sell Setup Count
+    if _src > _src[_lb] and _uptrend
+        _sell := _sell[1] + 1
+        if _sellCont > 0
+            if not _start
+                _sell := 0
+            else if _sell[1] == _cl and not _cont
+                _sell := 1
+    [_buy, _sell]
+
+[setBuy, setSell] = f_set(src3, i_setLb, i_setCl, priceFlip, setCont, setStart)
+// --- }
+
+// --- Stealth Setup {
+bool setBuyStealth  = (setBuy[1]  == i_setCl - 1) and (src2 <= src3[i_setLb]) and (setBuy  != i_setCl) 
+bool setSellStealth = (setSell[1] == i_setCl - 1) and (src1 >= src3[i_setLb]) and (setSell != i_setCl)
+// --- }
+
+// --- Setup Termination {
+var bool setBuyCl  = false, bool setBuyCl1  = setBuy  == i_setCl - 1
+var bool setSellCl = false, bool setSellCl1 = setSell == i_setCl - 1
+
+if i_setStealth
+    setBuyCl  := setBuy  == i_setCl or setBuyStealth
+    setSellCl := setSell == i_setCl or setSellStealth
+else
+    setBuyCl  := setBuy  == i_setCl
+    setSellCl := setSell == i_setCl
+
+var int setBuyNum = 0, var int setSellNum = 0
+setBuyNum  :=  setBuyCl  ? setBuyNum + 1  : setSellCl ? 0 : nz(setBuyNum[1])
+setSellNum :=  setSellCl ? setSellNum + 1 : setBuyCl  ? 0 : nz(setSellNum[1])
+// --- }
+
+// --- Setup Perfection {
+f_setPerf(_cl, _lb, _setBuy, _setSell) =>
+    var bool _perfBuy = na, 
+	if (_setBuy == _cl) or setBuyStealth
+		_perfBuy := (src2 < src2[_lb + 1]) and (src2 < src2[_lb + 2])
+	var bool _perfSell = na
+    if (_setSell == _cl) or setSellStealth
+		_perfSell := (src1 > src1[_lb + 1]) and (src1 > src1[_lb + 2])
+	[_perfBuy, _perfSell]
+
+[setBuyPerf,  setSellPerf]  = f_setPerf(i_setCl,     1, setBuy, setSell)
+[setBuyPerf1, setSellPerf1] = f_setPerf(i_setCl - 1, 0, setBuy, setSell)
+// --- }
+
+// --- Setup Intersection {
+f_setInt(_setup, _cl) =>
+    var bool _setInt = false
+    for i = _cl to 3
+        if _cl >= i + 1
+            if _setup == setBuyCl
+                _setInt := src1 > src2[i]
+            else if _setup == setSellCl
+                _setInt := src2 < src1[i]            
+    _setInt  
+
+bool setBuyInt   = f_setInt(setBuy, i_setCl)
+bool setBuyInt1  = f_setInt(setBuy, i_setCl - 1)
+bool setSellInt  = f_setInt(setSell, i_setCl)
+bool setSellInt1 = f_setInt(setSell, i_setCl - 1)
+// --- }
+
+// --- Double and Triple Setup {
+f_setX(_set, _cl, _lvl) =>
+    var bool _xSet = false
+    bool _setD = _set and _set[_cl]
+    bool _setT = _setD and _set[_cl * 2]
+    if _lvl == 3 
+        _xSet := _setT
+    else if _lvl == 2
+        _xSet := _setD
+    _xSet
+    
+bool setBuyD  = i_setDouble and f_setX(setBuyCl,  i_setCl, 2)
+bool setBuyT  = i_setTriple and f_setX(setBuyCl,  i_setCl, 3)
+bool setSellD = i_setDouble and f_setX(setSellCl, i_setCl, 2)
+bool setSellT = i_setTriple and f_setX(setSellCl, i_setCl, 3)
+// -- }
+
+// }
+
+//-----------------------------------------------------------------
+// Setup Risk Lines {
+
+// --- Buy Setup Risk {
+f_setBuyRisk(_setBuyCl, _cl, _mult) =>
+    var float _lBar = na, var float _low = na
+    float _min = min(src2, src3), float _max = max(src1, src3)
+    if _setBuyCl
+        _lBar := -1 * lowestbars(_cl)[0]
+        _low  := src2[_lBar] - src7[_lBar] * _mult
+    else if (_min < _low[1])  and (_max > _low[1])  or (src2 <= _low[1])
+        _low := na
+    else
+        _low := _low[1]
+    _low
+// --- }
+
+// --- Sell Setup Risk {
+f_setSellRisk(_setSellCl, _cl, _mult) =>
+    var float _hBar = na, var float _high = na
+    float _min = min(src2, src3), float _max = max(src1, src3)
+    if _setSellCl
+        _hBar := -1 * highestbars(_cl)[0]
+        _high := src1[_hBar] + src7[_hBar] * _mult
+    else if (_min < _high[1]) and (_max > _high[1]) or (src1 >= _high[1])
+        _high := na 
+    else
+        _high := _high[1]
+    _high
+// --- }
+
+float setBuyRisk  = f_setBuyRisk(setBuyCl,   i_setCl, i_setRiskFactor)
+float setSellRisk = f_setSellRisk(setSellCl, i_setCl, i_setRiskFactor)
+//  }
+
+//-----------------------------------------------------------------
+// Trend Support and Resistance {
+
+// --- Support function {
+f_trendSup(_set, _cl, _lvl) =>
+	var float _low	= na, var float _sup	= na
+	var bool _lvl1 = _lvl == 1, var bool _lvl2 = _lvl == 2, var bool _lvl3 = _lvl == 3
+	bool _setCl = (_set == _cl or (_set == setBuy ? setBuyStealth : setSellStealth))
+	if _set == 1
+        if _lvl2 and _set[1] == _cl
+            _low := min(src2[_cl], src2[_cl - 1], src2[_cl - 2])
+        else if _lvl3 and _set[1] == _cl and _set[1 + _cl] == _cl 
+            _low := min(src2[_cl * 2], src2[_cl * 2 - 1], src2[_cl * 2 - 2])
+        else
+            _low := src2
+    else if _set > 1 or _setCl
+        _low := min(_low[1], src2)
+            
+	if _setCl and (_lvl1 or (_lvl2 and setSellD) or (_lvl3 and setSellT))
+	    _sup := _low
+	else if src3 < nz(_sup[1], src1)
+	    _sup := na
+	else
+	    _sup := _sup[1]
+	_sup
+// --- }
+
+// --- Resistance function {
+f_trendRes(_set, _cl, _lvl) =>
+	var float _high	= na, var float _res = na
+    var bool _lvl1 = _lvl == 1, var bool _lvl2 = _lvl == 2, var bool _lvl3 = _lvl == 3
+    bool _setCl = (_set == _cl or (_set == setBuy ? setBuyStealth : setSellStealth))
+	if _set ==	1
+        if _lvl2 and _set[1] == _cl
+            _high := max(src1[_cl], src1[_cl - 1], src1[_cl - 2])
+        else if _lvl3 and _set[1] == _cl and _set[1 + _cl] == _cl
+            _high := max(src1[_cl * 2], src1[_cl * 2 - 1], src1[_cl * 2 - 2])
+        else
+            _high := src1
+    else if _set > 1 or _setCl
+        _high := max(_high[1], src1)
+
+    if _setCl and (_lvl1 or (_lvl2 and setBuyD) or (_lvl3 and setBuyT))
+        _res := _high
+    else if src3 > nz(_res[1], src2)
+        _res := na
+    else
+        _res := _res[1]
+    _res
+// --- }
+ 
+// --- Trend Declaration {
+float trendSup    = f_trendSup(setSell, i_setCl, 1)
+float trendSupR   = f_trendRes(setSell, i_setCl, 1)
+
+float trendSupD   = f_trendSup(setSell, i_setCl, 2)
+float trendSupDR  = f_trendRes(setSell, i_setCl, 2)
+
+float trendSupT   = f_trendSup(setSell, i_setCl, 3)
+float trendSupTR  = f_trendRes(setSell, i_setCl, 3)
+
+float trendRes    = f_trendRes(setBuy,  i_setCl, 1)
+float trendResR   = f_trendSup(setBuy,  i_setCl, 1)
+
+float trendResD   = f_trendRes(setBuy,  i_setCl, 2)
+float trendResDR  = f_trendSup(setBuy,  i_setCl, 2)
+
+float trendResT   = f_trendRes(setBuy,  i_setCl, 3)
+float trendResTR  = f_trendSup(setBuy,  i_setCl, 3)
+// --- }
+
+// }
+
+//-----------------------------------------------------------------
+// Trend Reload and Extension Zones {
+
+// --- Reload & Extension zone function {
+f_setRlz(_trend, _risk, _mult) =>
+    float _rlz = _trend + ((nz(_risk) ? nz(_risk) : fixnan(_risk[1])) - _trend) * _mult 
+// --- }
+
+// --- Reload Zone Declaration {
+float trendRlzSup1 = f_setRlz(trendSup, setSellRisk, (1 - i_rlzFact1))
+float trendRlzSup2 = f_setRlz(trendSup, setSellRisk, (1 - i_rlzFact2))
+float trendRlzRes1 = f_setRlz(trendRes, setBuyRisk, (1 - i_rlzFact1))
+float trendRlzRes2 = f_setRlz(trendRes, setBuyRisk, (1 - i_rlzFact2))
+// --- }
+
+// --- Extension Zone Declaration {
+float trendExtSup1 = f_setRlz(trendSup,  setSellRisk, i_extFact1) 
+float trendExtSup2 = f_setRlz(trendSup,  setSellRisk, i_extFact2)
+float trendExtRes1 = f_setRlz(trendRes,  setBuyRisk, i_extFact1)
+float trendExtRes2 = f_setRlz(trendRes,  setBuyRisk, i_extFact2)
+// --- }
+
+// }
+
+//-----------------------------------------------------------------
+// Setup Statistics {
+
+// --- Distance {
+f_dist (_src, _src3) =>
+    float _dist = _src - _src3
+    float _perc = _dist / _src3 * 100
+    [_dist, _perc]
+
+[trendSupDst,  trendSupDst2]    = f_dist(trendSup,  src3)
+[trendSupDDst, trendSupDDst2]   = f_dist(trendSupD, src3)
+[trendSupTDst, trendSupTDst2]   = f_dist(trendSupT, src3)
+[trendResDst,  trendResDst2]    = f_dist(trendRes,  src3)
+[trendResDDst, trendResDDst2]   = f_dist(trendResD, src3)
+[trendResTDst, trendResTDst2]   = f_dist(trendResT, src3)
+[setBuyRiskDst, setBuyRiskDst2] = f_dist(setBuyRisk, src3)
+[setSellRiskDst, setSellRiskDst2] = f_dist(setSellRisk, src3)
+[setPfDst, setPfDst2]           = f_dist(src3[i_setLb], src3)
+
+[SupDst,  SupDst2]  = f_dist(trendSupR, trendSup)
+[SupDDst, SupDDst2] = f_dist(trendSupR, nz(trendSup[1]))
+[SupTDst, SupTDst2] = f_dist(trendSupR, trendSupT)
+
+[ResDst,  ResDst2]  = f_dist(trendResR, trendRes)
+[ResDDst, ResDDst2] = f_dist(trendResR, nz(trendRes[1]))
+[ResTDst, ResTDst2] = f_dist(trendResR, trendResT)
+
+float SupDstP  = valuewhen(setSellCl, SupDst, 0) 
+float SupDDstP = valuewhen(setSellD,  SupDDst, 0) 
+float SupTDstP = valuewhen(setSellT,  SupTDst, 0)
+float ResDstP  = valuewhen(setBuyCl,  ResDst, 0)  
+float ResDDstP = valuewhen(setBuyD,   ResDDst, 0)  
+float ResTDstP = valuewhen(setBuyT,   ResTDst, 0)
+float SupPrefDif  = nz(SupDstP[1])  / SupDstP 
+float SupDPrefDif = nz(SupDDstP[1]) / SupDDstP 
+float SupTPrefDif = nz(SupTDstP[1]) / SupTDstP
+float ResPrefDif  = nz(ResDstP[1])  / ResDstP
+float ResDPrefDif = nz(ResDDstP[1]) / ResDDstP
+float ResTPrefDif = nz(ResTDstP[1]) / ResTDstP
+// --- }
+
+// --- Age {
+int setSellAge     = barssince(setSellCl)                                                      
+int setSellDAge    = barssince(setSellD)           
+int setSellTAge    = barssince(setSellT)  
+int setBuyAge      = barssince(setBuyCl)                                                          
+int setBuyDAge     = barssince(setBuyD)              
+int setBuyTAge     = barssince(setBuyT)   
+
+int setBuyRiskAge  = barssince((setBuyRisk  != setBuyRisk[1]  or nz(setBuyRisk))  and setBuyCl)
+int setSellRiskAge = barssince((setSellRisk != setSellRisk[1] or nz(setSellRisk)) and setSellCl)
+
+int trendSupAge    = barssince((trendSup != trendSup[1] or nz(trendSup)) and setSellCl) 
+int trendSupDAge   = barssince(setSellD)    
+int trendSupTAge   = barssince(setSellT)
+int trendResAge    = barssince((trendRes != trendRes[1] or nz(trendRes)) and setBuyCl) 
+int trendResDAge   = barssince(setBuyD)      
+int trendResTAge   = barssince(setBuyT)
+// --- }
+
+// --- Text {
+
+// ------ Convert Bars to Time {
+// Credits to Kodify website https://kodify.net/tradingview/date-time/time-conversions/
+f_barsToDateTime(_bars) =>
+    var int ts = 0
+    if bar_index > _bars * 5 // + i_setCl + i_setLb
+        ts := time - time[_bars]
+    timeSeconds = round(ts / 1000) 
+    _weeks   = floor(timeSeconds / 604800)
+    _days    = floor((timeSeconds % 604800) / 86400)
+    _hours   = floor((timeSeconds % 86400) / 3600)
+    _minutes = floor((timeSeconds % 3600) / 60) 
+    _out = 
+      (_weeks   > 0 ? tostring(_weeks,   "#W ") : "") +
+      (_days    > 0 ? tostring(_days,    "#D ") : "") + 
+      (_hours   > 0 ? tostring(_hours,   "#h ") : "") + 
+      (_minutes > 0 ? tostring(_minutes, "#m")  : "")
+    _out
+// --- }
+
+// ------ String Shift {
+var string sShift1 = "\n­"
+var string sShift2 = "\n­\n­"
+var string sShift3 = "\n­\n­\n­"
+var string sShift4 = "\n­\n­\n­\n­"
+// ------ }
+
+// ------ Setup {
+f_strDec(_src) => _src < 1 ? "#.########" : "#.##"
+
+f_setTxt2(_setNum, _dist, _dist2, _distP, _pRefDif, _age) =>
+    ((not i_statHide) ? "\n--------------------------\n" : "") + 
+      tostring(_setNum, "Setup in a row : #\n") +
+      "Height : " + tostring(abs(_dist), f_strDec(_dist)) + tostring(abs(_dist2), " [#.##") + 
+      "%]\n--------------------------\n" +
+      tostring(i_setCl, "Previous Setup [#] :") + 
+      "\nHeight : " + tostring(abs(nz(_distP[1])), f_strDec(_distP)) + tostring(nz(_pRefDif),  " [#.###x]") + 
+      tostring(_age + 1, "\nBars ago : # [") + f_barsToDateTime(_age + 1) + "]"
+
+string setStealthTxt = (setSellStealth or setBuyStealth ? "Stealth " : "")
+string setSellTxt    = tostring(i_setCl, "Sell Setup [#]")
+string setBuyTxt     = tostring(i_setCl, "Buy Setup [#]")
+string setDTxt       = ((setSellD and not setSellT) or (setBuyD and not setBuyT) ? "Double " : "")
+string setTTxt       = (setSellT or setBuyT ? "Triple " : "")
+
+string setSTxt1  = setStealthTxt + setSellTxt
+string setSDTxt1 = setStealthTxt + setDTxt + setSellTxt
+string setSTTxt1 = setStealthTxt + setTTxt + setSellTxt
+string setBTxt1  = setStealthTxt + setBuyTxt
+string setBDTxt1 = setStealthTxt + setDTxt + setBuyTxt
+string setBTTxt1 = setStealthTxt + setTTxt + setBuyTxt
+
+string setSTxt2  = f_setTxt2(setSellNum, SupDst,  SupDst2,  SupDstP,  SupPrefDif,  nz(setSellAge[1]))
+string setSDTxt2 = f_setTxt2(setSellNum, SupDDst, SupDDst2, SupDDstP, SupDPrefDif, nz(setSellDAge[1]))
+string setSTTxt2 = f_setTxt2(setSellNum, SupTDst, SupTDst2, SupTDstP, SupTPrefDif, nz(setSellTAge[1]))
+string setBTxt2  = f_setTxt2(setBuyNum,  ResDst,  ResDst2,  ResDstP,  ResPrefDif,  nz(setBuyAge[1]))
+string setBDTxt2 = f_setTxt2(setBuyNum,  ResDDst, ResDDst2, ResDDstP, ResDPrefDif, nz(setBuyDAge[1]))
+string setBTTxt2 = f_setTxt2(setBuyNum,  ResTDst, ResTDst2, ResTDstP, ResTPrefDif, nz(setBuyTAge[1])) 
+// ------ }
+
+// ------ Trend {
+f_trendLvlTxt(_lvl, _dir) => 
+    string _type = _dir ? "Support" : "Resistance"
+    string _level = _lvl == 2 ? "Double " : _lvl == 3 ? "Triple " : ""
+    _level + _type + " : "
+
+f_trendTxt(_trend, _lvl, _dir) => f_trendLvlTxt(_lvl, _dir) + tostring(_trend, f_strDec(src3))
+
+f_trendTxt2(_dist, _dist2, _age) =>
+    ((not i_statHide) ? "\n--------------------------\n" : "") +
+      "Distance : " + tostring(abs(_dist),  f_strDec(src3)) + tostring(abs(_dist2),  " [#.##") + 
+      " %]\nAge : " + tostring(_age,  "# bars [") + f_barsToDateTime(_age) + "]"
+       
+string trendResTxt1  = f_trendTxt(trendRes, 1, false)
+string trendDResTxt1 = f_trendTxt(trendResD, 2, false)
+string trendTResTxt1 = f_trendTxt(trendResT, 3, false)
+string trendResTxt2  = f_trendTxt2(trendResDst,  trendResDst2,  trendResAge)
+string trendDResTxt2 = f_trendTxt2(trendResDDst, trendResDDst2, trendResDAge) 
+string trendTResTxt2 = f_trendTxt2(trendResTDst, trendResTDst2, trendResTAge) 
+
+string trendSupTxt1  = f_trendTxt(trendSup, 1, true)
+string trendDSupTxt1 = f_trendTxt(trendSupD, 2, true)
+string trendTSupTxt1 = f_trendTxt(trendSupT, 3, true)
+string trendSupTxt2  = f_trendTxt2(trendSupDst,  trendSupDst2,  trendSupAge)
+string trendDSupTxt2 = f_trendTxt2(trendSupDDst, trendSupDDst2, trendSupDAge)
+string trendTSupTxt2 = f_trendTxt2(trendSupTDst, trendSupTDst2, trendSupTAge)
+// ------ }
+
+// ------ Risk lines {
+f_setRiskTxt1(_risk, _dir) => (_dir ? "Setup Buy Risk : " : "Setup Sell Risk : ") + tostring(_risk, f_strDec(src3))
+
+string setBuyRiskTxt1  = f_setRiskTxt1(setBuyRisk, true)
+string setBuyRiskTxt2  = f_trendTxt2(setBuyRiskDst, setBuyRiskDst2, setBuyRiskAge)
+
+string setSellRiskTxt1 = f_setRiskTxt1(setSellRisk, false)
+string setSellRiskTxt2 = f_trendTxt2(setSellRiskDst, setSellRiskDst2, setSellRiskAge) 
+// ------ }
+
+// ------ Priceflip {
+f_pfTxt2(_dist, _dist2) =>
+    ((not i_statHide) ? "\n--------------------------\n" : "") +
+      "Distance : " + tostring(abs(_dist), f_strDec(src3)) + tostring(abs(_dist2), " [#.##") + " %]"
+
+string pfTxt1 = (src3 > src3[4] ? "Bearish" : "Bullish") + " Price Flip at : " + tostring(src3[4], f_strDec(src3[4]))
+string pfTxt2 = f_pfTxt2(setPfDst, setPfDst2)
+// ------ }
+
+// ------ Reload and Extension Zones {
+trendExtRes = (trendExtRes1 + trendExtRes2) / 2
+trendExtSup = (trendExtSup1 + trendExtSup2) / 2
+
+trendRlzRes = (trendRlzRes1 + trendRlzRes2) / 2
+trendRlzSup = (trendRlzSup1 + trendRlzSup2) / 2
+
+f_trendExtTxt(_lvl, _dir) =>
+    string _type1 = _lvl ? "Reload " : "Extension " 
+    string _type2 = _dir ? "Buy " : "Sell "
+    _type2 + _type1 + "Zone"
+
+f_trendRlzTxt2(_iZone1, _iZone2, _zone1, _zone2) => 
+    ((not i_statHide) ? "\n--------------------------\n" : "") + 
+      "Higher Margin "  + tostring(_iZone2, "(#.###) : ") + tostring(_zone2, f_strDec(src3)) + 
+      "\nLower  Margin " + tostring(_iZone1, "(#.###) : ") + tostring(_zone1, f_strDec(src3)) 
+
+string trendExtResTxt1 = f_trendExtTxt(false, false)
+string trendExtResTxt2 = f_trendRlzTxt2(i_extFact1, i_extFact2, trendExtSup1, trendExtSup2)
+
+string trendExtSupTxt1 = f_trendExtTxt(false, true)
+string trendExtSupTxt2 = f_trendRlzTxt2(i_extFact2, i_extFact1, trendExtRes2, trendExtRes1)
+
+string trendRlzResTxt1 = f_trendExtTxt(true, true)
+string trendRlzResTxt2 = f_trendRlzTxt2(i_rlzFact2, i_rlzFact1, trendRlzSup2, trendRlzSup1)
+
+string trendRlzSupTxt1 = f_trendExtTxt(true, false)
+string trendRlzSupTxt2 = f_trendRlzTxt2(i_rlzFact1, i_rlzFact2, trendRlzRes1, trendRlzRes2)
+// ------ }
+
+// --- }
+
+// --- Setup Label {
+f_setStats(_src, _txt1, _txt2, _col, _c_statTxt, _labStyle) =>
+    var label lab = na
+    _text = _txt1 + (not i_statHide ? _txt2 : "")
+    lab := label.new(bar_index, _src, _text , xloc.bar_index, yloc.price, _col, _labStyle, _c_statTxt, textalign = text.align_left, tooltip = i_statHide ? _txt2 : "")
+// --- }
+
+// --- Trend Label {
+// Trick with if block is a courtesy of @LucF (https://www.tradingview.com/u/LucF) and @midtownsk8rguy (https://www.tradingview.com/u/midtownsk8rguy)
+// Offset update is a courtesy of @LucF as well ;)
+f_trendStats(_src, _txt, _txt2, _col, _c_statTxt, _offsetLabels) =>
+    var label _l = na
+    _time = int(time + (time - time[1]) * _offsetLabels)
+    _text = _txt + (not i_statHide ? _txt2 : "")
+    if na(_l)
+        _l := label.new(_time, _src, _text, xloc.bar_time, yloc.price, _col, label.style_label_left, _c_statTxt, textalign = text.align_left, tooltip = i_statHide ? _txt2 : ""), int(na)
+    else
+        label.set_xy(_l, _time, _src), label.set_text(_l, _text), label.set_color(_l, _col), label.set_textcolor(_l, _c_statTxt), int(na)
+        
+// --- } 
+
+// --- Line function {
+f_line(_x, _y, _x2, _y2, _col, _width) =>
+    line.new(_x, _y, _x2, _y2, xloc.bar_index, extend.none, _col, line.style_dashed, _width)
+
+f_line2(_x, _y, _col, _width, _offsetLabels) =>
+    _t = int(time + (time - time[1]) * _offsetLabels)
+    var line _l = na
+    _l := line.new(_x, _y, _t, _y, xloc.bar_time, extend.none, _col, line.style_dashed, _width)  
+// --- }
+
+// --- Setup Rectangles {
+f_rect(_low, _high, _set, _cl, _col, _lvl, _w) =>
+    if _set == true
+        var int _x = na, var int _y = na, var int _lb = _cl * _lvl
+        _x  := bar_index, _y := _x - _lb + 1
+        f_line(_x, _low,  _x, _high, _col, _w)
+        f_line(_y, _low,  _y, _high, _col, _w)
+        f_line(_x, _high, _y, _high, _col, _w)
+        f_line(_x, _low,  _y, _low,  _col, _w)
+// --- }
+
+// }
+
+//-----------------------------------------------------------------
+// Colors {
+var color c_setPf    = color.gray
+var color c_setBuy   = color.red  
+var color c_setSell  = color.green
+var color c_setInt   = color.orange
+var color c_setPerf  = color.blue 
+var color c_setD     = color.yellow
+var color c_setT     = color.purple
+var color c_setRisk  = color.blue
+
+var color c_trendRes = color.red
+var color c_trendSup = color.green
+var color c_rlzSup   = color.green
+var color c_rlzRes   = color.red
+var color c_extSup   = color.gray
+var color c_extRes   = color.gray
+
+var color c_statTxt     = color.new(color.gray,  0)
+
+var color c_statRes     = color.new(color.red,   95)
+var color c_statResD    = color.new(color.red,   95)
+var color c_statResT    = color.new(color.red,   95)
+
+var color c_statSup     = color.new(color.green, 95)
+var color c_statSupD    = color.new(color.green, 95)
+var color c_statSupT    = color.new(color.green, 95)
+
+var color c_statRisk    = color.new(color.blue,  95)
+var color c_statPf      = color.new(color.gray,  95)
+
+var color c_statRlzBuy  = color.new(color.green, 95)
+var color c_statRlzSell = color.new(color.red,   95)
+var color c_statExt     = color.new(color.gray,  95)
+
+var color c_rectSell    = color.new(color.green, 50)
+var color c_rectSellD   = color.new(color.green, 50)
+var color c_rectSellT   = color.new(color.green, 50)
+var color c_rectBuy     = color.new(color.red,   50)
+var color c_rectBuyD    = color.new(color.red,   50)
+var color c_rectBuyT    = color.new(color.red,   50)
+
+// }
+
+//-----------------------------------------------------------------
+// Plots {
+
+// --- Plot Control {
+
+// ------ Setup  {
+var bool setBrSw = false, var bool setBuySw = false
+var bool setSrSw = false, var bool setSellSw = false
+
+var bool setBuyIntSw  = false, var bool setBuyIntSw1  = false
+var bool setSellIntSw = false, var bool setSellIntSw1 = false
+
+var bool setBuyPerfSw  = false, var bool setBuyPerfSw1  = false
+var bool setSellPerfSw = false, var bool setSellPerfSw1 = false
+
+var bool setBuyDSw  = false, var bool setBuyTSw  = false
+var bool setSellDSw = false, var bool setSellTSw = false
+
+bool setBuyRepl1 = (setBuy > 9 and i_setCl > 9)
+bool setBuyRepl2 = not i_setReplace or src3 < src2[1]
+
+bool setSellRepl1 = (setSell > 9 and i_setCl > 9)
+bool setSellRepl2 = not i_setReplace or src3 > src1[1]
+
+if i_setSw
+    setBuySw    := setBuyRepl2 and not i_setOnlyCl or setBuy == i_setCl
+    setBrSw     := (not setBuyRepl2  or (setBuy > i_setCl) or setBuyRepl1) and not i_setOnlyCl or (i_setCl > 9 and setBuy == i_setCl)
+    
+    setSellSw   := setSellRepl2 and not i_setOnlyCl or setSell == i_setCl
+    setSrSw     := (not setSellRepl2 or (setSell > i_setCl) or setSellRepl1) and not i_setOnlyCl or (i_setCl > 9 and setSell == i_setCl)
+    
+    if i_setInt
+        setBuyIntSw1  := setBuyInt1 and not i_setOnlyCl
+        setBuyIntSw   := setBuyInt
+        setSellIntSw1 := setSellInt1 and not i_setOnlyCl
+        setSellIntSw  := setSellInt
+
+    if i_setPerf
+        setBuyPerfSw   := setBuyPerf and setBuyCl
+        setBuyPerfSw1  := setBuyPerf1 and setBuyCl1 and not i_setOnlyCl
+        setSellPerfSw  := setSellPerf and setSellCl
+        setSellPerfSw1 := setSellPerf1 and setSellCl1 and not i_setOnlyCl
+
+    if i_setDouble
+        setBuyDSw := setBuyD and not setBuyT
+        setSellDSw := setSellD and not setSellT
+        
+    if i_setTriple
+        setBuyTSw := setBuyT
+        setSellTSw := setSellT
+// ------ }
+
+// ------ Price Flip {
+var bool pfUpSw = false, var bool pfDnSw = false
+var bool pfLineSw = false
+
+if i_pfSw
+    if i_pfArrows
+        pfUpSw := pfUp and not nz(pfUp[1])
+        pfDnSw := pfDn and not nz(pfDn[1])
+    if i_pfLine
+        pfLineSw := true
+// ------ }
+
+// ------ Trend {
+var bool trendSw = false
+var bool trendRlzSw = false
+var bool trendExtSw = false
+var bool trendResDSw = false
+var bool trendSupDSw = false
+
+if i_trend
+    if i_trendSRSw
+        trendSw := true
+        trendResDSw := trendResD != trendResT
+        trendSupDSw := trendSupD != trendSupT
+    if i_trendRlz
+        trendRlzSw := true
+    if i_trendExt
+        trendExtSw := true
+        if trendExtRes2 < 0
+            trendExtSw := false
+// ------ }
+
+// ------ Setup Location {
+setBuyLoc  = i_setLoc == "Abovebar" or i_setLoc == "Buy - Above, Sell - Below" ? location.abovebar : location.belowbar
+setSellLoc = i_setLoc == "Belowbar" or i_setLoc == "Buy - Above, Sell - Below" ? location.belowbar : location.abovebar
+// ------ }
+
+// --- }
+
+// --- Setup Plot {
+plotchar(setBrSw   ? setBuy       : na, "Setup Buy ▪",  "", setBuyLoc,  c_setBuy,  i_setTr2, 0, "▪")
+plotchar(setBuySw  ? setBuy == 1  : na, "Setup Buy 1",  "", setBuyLoc,  c_setBuy,  i_setTr1, 0, "1")
+plotchar(setBuySw  ? setBuy == 2  : na, "Setup Buy 2",  "", setBuyLoc,  c_setBuy,  i_setTr1, 0, "2")
+plotchar(setBuySw  ? setBuy == 3  : na, "Setup Buy 3",  "", setBuyLoc,  c_setBuy,  i_setTr1, 0, "3")
+plotchar(setBuySw  ? setBuy == 4  : na, "Setup Buy 4",  "", setBuyLoc,  c_setBuy,  i_setTr1, 0, "4") 
+plotchar(setBuySw  ? setBuy == 5  : na, "Setup Buy 5",  "", setBuyLoc,  c_setBuy,  i_setTr1, 0, "5")
+plotchar(setBuySw  ? setBuy == 6  : na, "Setup Buy 6",  "", setBuyLoc,  c_setBuy,  i_setTr1, 0, "6")
+plotchar(setBuySw  ? setBuy == 7  : na, "Setup Buy 7",  "", setBuyLoc,  c_setBuy,  i_setTr1, 0, "7")
+plotchar(setBuySw  ? setBuy == 8  : na, "Setup Buy 8",  "", setBuyLoc,  c_setBuy,  i_setTr1, 0, "8")
+plotchar(setBuySw  ? setBuy == 9  : na, "Setup Buy 9",  "", setBuyLoc,  c_setBuy,  i_setTr1, 0, "9")
+
+plotchar(setSrSw   ? setSell      : na,	"Setup Sell ▪", "", setSellLoc, c_setSell, i_setTr2, 0, "▪")
+plotchar(setSellSw ? setSell == 1 : na,	"Setup Sell 1", "", setSellLoc, c_setSell, i_setTr1, 0, "1")
+plotchar(setSellSw ? setSell == 2 : na,	"Setup Sell 2", "", setSellLoc, c_setSell, i_setTr1, 0, "2")
+plotchar(setSellSw ? setSell == 3 : na,	"Setup Sell 3", "", setSellLoc, c_setSell, i_setTr1, 0, "3")
+plotchar(setSellSw ? setSell == 4 : na,	"Setup Sell 4", "", setSellLoc, c_setSell, i_setTr1, 0, "4")
+plotchar(setSellSw ? setSell == 5 : na,	"Setup Sell 5", "", setSellLoc, c_setSell, i_setTr1, 0, "5")
+plotchar(setSellSw ? setSell == 6 : na,	"Setup Sell 6", "", setSellLoc, c_setSell, i_setTr1, 0, "6")
+plotchar(setSellSw ? setSell == 7 : na,	"Setup Sell 7", "", setSellLoc, c_setSell, i_setTr1, 0, "7")
+plotchar(setSellSw ? setSell == 8 : na,	"Setup Sell 8", "", setSellLoc, c_setSell, i_setTr1, 0, "8")
+plotchar(setSellSw ? setSell == 9 : na,	"Setup Sell 9", "", setSellLoc, c_setSell, i_setTr1, 0, "9")
+
+plotshape(i_setArrows and setBuyCl,  "Setup Buy Arrow",  shape.arrowup,   setBuyLoc,  c_setBuy,  0, 0, "", c_setBuy)
+plotshape(i_setArrows and setSellCl, "Setup Sell Arrow", shape.arrowdown, setSellLoc, c_setSell, 0, 0, "", c_setSell)
+// --- }
+
+// --- Stealth Setup Plot {
+plotshape(i_setStealth and setBuyStealth,  "Stealth Buy Setup",   shape.arrowup,   setBuyLoc,  c_setBuy,  0, 0, "S", c_setBuy)
+plotshape(i_setStealth and setSellStealth, "Stealth Sell Setup",  shape.arrowdown, setSellLoc, c_setSell, 0, 0, "S", c_setSell)
+// --- }
+
+// --- Intersection Plot {
+plotchar(setBuyIntSw1   ? setBuyCl1  : na, "Pre Setup Buy Intersection",  "", setBuyLoc,  c_setInt,  i_setTr1, 0, sShift2 + "I" + sShift1, c_setInt,  false)
+plotchar(setBuyIntSw    ? setBuyCl   : na, "Setup Buy Intersection",      "", setBuyLoc,  c_setInt,  i_setTr2, 0, sShift2 + "I" + sShift1, c_setInt,  false)
+plotchar(setSellIntSw1  ? setSellCl1 : na, "Pre Setup Sell Intersection", "", setSellLoc, c_setInt,  i_setTr1, 0, sShift2 + "I" + sShift1, c_setInt,  false)
+plotchar(setSellIntSw   ? setSellCl  : na, "Setup Sell Intersection",     "", setSellLoc, c_setInt,  i_setTr2, 0, sShift2 + "I" + sShift1, c_setInt,  false)
+// --- }
+
+// --- Perfected Setup Plot { 
+plotchar(setBuyPerfSw1  ? setBuyCl1  : na, "Pre Setup Buy Perfection",    "", setBuyLoc,  c_setPerf, i_setTr1, 0, sShift3 + "P" + sShift2, c_setPerf, false)
+plotchar(setBuyPerfSw   ? setBuyCl   : na, "Setup Buy Perfection",        "", setBuyLoc,  c_setPerf, i_setTr1, 0, sShift3 + "P" + sShift2, c_setPerf, false)
+plotchar(setSellPerfSw1 ? setSellCl1 : na, "Pre Setup Sell Perfection",   "", setSellLoc, c_setPerf, i_setTr1, 0, sShift3 + "P" + sShift2, c_setPerf, false)
+plotchar(setSellPerfSw  ? setSellCl  : na, "Setup Sell Perfection",       "", setSellLoc, c_setPerf, i_setTr1, 0, sShift3 + "P" + sShift2, c_setPerf, false)
+// --- }
+
+// --- Double & Triple Setup Plot {
+plotchar(setBuyDSw      ? setBuyD    : na, "Double Setup Buy",            "", setBuyLoc,  c_setD,    i_setTr1, 0, sShift4 + "D" + sShift3, c_setD,    false)
+plotchar(setBuyTSw      ? setBuyT    : na, "Triple Setup Buy",            "", setBuyLoc,  c_setT,    i_setTr2, 0, sShift4 + "T" + sShift3, c_setT,    false)
+plotchar(setSellDSw     ? setSellD   : na, "Double Setup Sell",           "", setSellLoc, c_setD,    i_setTr1, 0, sShift4 + "D" + sShift3, c_setD,    false)
+plotchar(setSellTSw     ? setSellT   : na, "Triple Setup Sell",           "", setSellLoc, c_setT,    i_setTr2, 0, sShift4 + "T" + sShift3, c_setT,    false)
+// --- }
+
+// --- Price Flip Plot {
+plotshape(pfDnSw    ? true          : na, "Bearish Price Flip", shape.arrowdown, setBuyLoc,  c_setPf, 70)
+plotshape(pfUpSw    ? true          : na, "Bullish Price Flip", shape.arrowup,   setSellLoc, c_setPf, 70)
+plot(pfLineSw       ? priceFlipLine : na, "Price flip Line",    c_setPf[7], 1, plot.style_stepline, false, 40, 0.0, i_setLb, show_last = 7)  
+// --- }
+
+// --- Trend Support and Resistance Plot {
+plot(trendSw     ? trendRes  : na, "Trend Resistance",        c_trendRes, 2, plot.style_circles)
+plot(trendSw     ? trendResD : na, "Double Trend Resistance", c_trendRes, 3, plot.style_circles)
+plot(trendSw     ? trendResT : na, "Triple Trend Resistance", c_trendRes, 4, plot.style_circles)
+
+plot(trendSw     ? trendSup  : na, "Trend Support",           c_trendSup, 2, plot.style_circles)
+plot(trendSw     ? trendSupD : na, "Double Trend Support",    c_trendSup, 3, plot.style_circles)
+plot(trendSw     ? trendSupT : na, "Triple Trend Support",    c_trendSup, 4, plot.style_circles)
+// --- }
+
+// --- Setup Risk Plot {
+plot(i_setRisk ? setSellRisk : na,	"Setup Support Risk",     c_setRisk,  1, plot.style_circles)
+plot(i_setRisk ? setBuyRisk : na,	"Setup Resistance Risk",  c_setRisk,  1, plot.style_circles)
+// --- }
+
+// --- Trend Reload Zone Plot {
+p_buyRlz1  = plot(trendRlzSw ? trendRlzSup1 : na,  "Buy Trend Reload 1",        c_extSup, 1, plot.style_linebr, editable = false) 
+p_buyRlz2  = plot(trendRlzSw ? trendRlzSup2 : na,  "Buy Trend Reload 2",        c_extSup, 1, plot.style_linebr, editable = false) 
+p_sellRlz1 = plot(trendRlzSw ? trendRlzRes1 : na,  "Sell Trend Reload 1",       c_extRes, 1, plot.style_linebr, editable = false) 
+p_sellRlz2 = plot(trendRlzSw ? trendRlzRes2 : na,  "Sell Trend Reload 2",       c_extRes, 1, plot.style_linebr, editable = false) 
+fill(p_buyRlz1,  p_buyRlz2,  c_rlzSup, i_rlzExtTr, "Buy Trend Reload Zone",     false)
+fill(p_sellRlz1, p_sellRlz2, c_rlzRes, i_rlzExtTr, "Sell Trend Reload Zone",    false)
+// --- }
+
+// --- Trend Extension Zone Plot {
+p_buyExt1  = plot(trendExtSw ? trendExtSup1 : na,  "Buy Trend Extension 1",     c_extRes, 1, plot.style_linebr, editable = false)
+p_buyExt2  = plot(trendExtSw ? trendExtSup2 : na,  "Buy Trend Extension 2",     c_extRes, 1, plot.style_linebr, editable = false) 
+p_sellExt1 = plot(trendExtSw ? trendExtRes1 : na,  "Sell Trend Extension 1",    c_extSup, 1, plot.style_linebr, editable = false) 
+p_sellExt2 = plot(trendExtSw ? trendExtRes2 : na,  "Sell Trend Extension 2",    c_extSup, 1, plot.style_linebr, editable = false)
+fill(p_buyExt1, p_buyExt2,   c_extSup, i_rlzExtTr, "Buy Trend Extension Zone",  false)
+fill(p_sellExt1, p_sellExt2, c_extRes, i_rlzExtTr, "Sell Trend Extension Zone", false)
+// --- }
+// }
+
+//-----------------------------------------------------------------
+// Label Plots {
+
+// --- Setup Statistics {
+if i_labels and i_statsSet
+    if setSellCl
+        f_setStats(trendSup,  setSTxt1,  setSTxt2,  c_statSup, c_statTxt, label.style_label_up)
+    if setSellD and not setSellT
+        f_setStats(trendSupD, setSDTxt1, setSDTxt2, c_statSup, c_statTxt, label.style_label_up)
+    if setSellT
+        f_setStats(trendSupT, setSTTxt1, setSTTxt2, c_statSup, c_statTxt, label.style_label_up)
+        
+    if setBuyCl
+        f_setStats(trendRes,  setBTxt1,  setBTxt2,  c_statRes, c_statTxt, label.style_label_down)
+    if setBuyD and not setBuyT
+        f_setStats(trendResD, setBDTxt1, setBDTxt2, c_statSup, c_statTxt, label.style_label_up)
+    if setBuyT 
+        f_setStats(trendResT, setBTTxt1, setBTTxt2, c_statSup, c_statTxt, label.style_label_up) 
+
+// --- }
+
+// --- Setup Rectangles {
+if i_labels and i_statsRect
+    if setBuyCl
+        f_rect(trendRes,        trendResR, setBuyCl,  i_setCl, c_rectBuy,  1, 1)
+    if setBuyD
+        f_rect(nz(trendRes[1]), trendResR, setBuyCl,  i_setCl, c_rectBuyD, 2, 2)
+    if setBuyT
+        f_rect(trendResT,       trendResR, setBuyCl,  i_setCl, c_rectBuyT, 3, 3)
+       
+    if setSellCl
+        f_rect(trendSup,        trendSupR, setSellCl, i_setCl, c_rectSell,  1, 1)
+    if setSellD
+        f_rect(nz(trendSup[1]), trendSupR, setSellCl, i_setCl, c_rectSellD, 2, 2) 
+    if setSellT
+        f_rect(trendSupT,       trendSupR, setSellCl, i_setCl, c_rectSellT, 3, 3) 
+// --- }
+
+// --- Trend Statistics {
+if i_labels and barstate.islast
+    // --- Trend Statistics {
+    if i_trend
+        if trendRes
+            f_trendStats(trendRes,  trendResTxt1,  trendResTxt2,  c_statRes, c_statTxt, i_offsetLabels)
+            f_line2(time, trendRes,  c_trendRes, 1, i_offsetLabels)
+        if trendResT
+            f_trendStats(trendResT, trendTResTxt1, trendTResTxt2, c_statRes, c_statTxt, i_offsetLabels)
+            f_line2(time, trendResT, c_trendRes, 1, i_offsetLabels)
+        if trendResD
+            f_trendStats(trendResD, trendDResTxt1, trendDResTxt2, c_statRes, c_statTxt, i_offsetLabels)
+            f_line2(time, trendResD, c_trendRes, 1, i_offsetLabels)
+
+        if trendSup
+            f_trendStats(trendSup,  trendSupTxt1, trendSupTxt2,   c_statSup, c_statTxt, i_offsetLabels)
+            f_line2(time, trendSup,  c_trendSup, 1, i_offsetLabels)
+        if trendSupT
+            f_trendStats(trendSupT, trendTSupTxt1, trendTSupTxt2, c_statSup, c_statTxt, i_offsetLabels)
+            f_line2(time, trendSupT, c_trendSup, 1, i_offsetLabels)
+        if trendSupD
+            f_trendStats(trendSupD, trendDSupTxt1, trendDSupTxt2, c_statSup, c_statTxt, i_offsetLabels)
+            f_line2(time, trendSupD, c_trendSup, 1, i_offsetLabels)
+    // --- }              
+
+    // --- Priceflip Statistics {
+    if i_pfSw
+        f_trendStats(priceFlipLine[i_setLb], pfTxt1, pfTxt2, src3 > nz(src3[4]) ? c_statRes : c_statSup, c_statTxt, i_offsetLabels)
+        f_line2(time, priceFlipLine[i_setLb], src3 > nz(src3[4]) ? c_trendRes : c_trendSup, 1, i_offsetLabels)
+    // --- }
+
+    // --- Risk Line Statistics {
+    if i_setRisk
+        if setBuyRisk
+            f_trendStats(setBuyRisk,  setBuyRiskTxt1, setBuyRiskTxt2,   c_statRisk, c_statTxt, i_offsetLabels)
+            f_line2(time, setBuyRisk,  c_setRisk, 1, i_offsetLabels)
+        if setSellRisk
+            f_trendStats(setSellRisk, setSellRiskTxt1, setSellRiskTxt2, c_statRisk, c_statTxt, i_offsetLabels)
+            f_line2(time, setSellRisk, c_setRisk, 1, i_offsetLabels)
+    // --- }
+
+    // --- Extention Zone Statistics {
+    if i_trendExt
+        if trendExtRes1
+            f_trendStats(trendExtRes, trendExtSupTxt1, trendExtSupTxt2, c_statExt, c_statTxt, i_offsetLabels)
+        if trendExtSup1
+            f_trendStats(trendExtSup, trendExtResTxt1, trendExtResTxt2, c_statExt, c_statTxt, i_offsetLabels)
+    // --- }
+    
+    // --- Reload Zone Statistics {
+    if i_trendExt
+        if trendRlzRes1
+            f_trendStats(trendRlzRes, trendRlzSupTxt1, trendRlzSupTxt2, c_statRlzSell, c_statTxt, i_offsetLabels)
+        if trendRlzSup1
+            f_trendStats(trendRlzSup, trendRlzResTxt1, trendRlzResTxt2, c_statRlzBuy,  c_statTxt, i_offsetLabels)
+    // --- }
+// --- }
+// }
