@@ -1,0 +1,26 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © capriole_charles
+
+//@version=4
+study("Put Call Ratio")
+
+len = input(200,"Lookback period in Days")
+mult = input(1.5,"Standard Deviation Multiple")
+
+pcc = security("USI:PCC","D",close)
+
+ma = sma(pcc,len)
+sd = stdev(pcc,len)
+bu = ma + mult*sd
+bl = ma - mult*sd
+
+buy = pcc>bu
+sell= pcc<bl
+
+plot(pcc)
+plot(ma,color=color.gray,transp=80)
+plot(bu,color=color.green,transp=50)
+plot(bl,color=color.red,transp=50)
+
+bgcolor(buy?color.green:na)
+bgcolor(sell?color.red:na)
