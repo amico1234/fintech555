@@ -1,0 +1,133 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © dgtrd
+
+//@version=4
+study("Relative Strength of Volume Indicators by DGT", shorttitle="RSI(VOLx) ʙʏ DGT ☼☾", format=format.price, max_bars_back=252)
+
+// -Input ======================================================================================= //
+
+length  = input(13, minval=1, title="Length")
+
+// Relative Strength application on Volume Indicators
+addRsiX = input(title = "► Relative Strength of" , options=["Accumulation/Distribution", "Elders Force Index", "Money Flow Index", "On Balance Volume","Price Volume Trend"], defval="On Balance Volume")
+smooth  = input(2,      "Smooth RSI, with Least Squares Method", minval=2)
+
+// Volume Histogram/MA/OSC
+volHist = input(title = "► Volume Histogram, and", options=["Moving Average", "Volume Oscillator", "Just Volume Histogram", "Remove Both"], defval="Moving Average")
+relVol  = input(true, "Relative Volume Histogram (4 Color)")
+size    = input(10, title="Change Plotting Size of Volume Histogram")
+
+// Volume Based Colored Bars
+vbcb    = input(true, title = "► Volume Based Colored Bars")
+
+// Labels 
+lables  = input(false,  "Display Labels (RSI & Volume)")
+
+// -Calculation ================================================================================= //
+
+// RSI
+rsi  = rsi(close, length)
+srsi = linreg(rsi, smooth, 0)
+
+var rsiText = ""
+rsix = if addRsiX == "Accumulation/Distribution"
+    rsiText := "rsi(ad,"
+    rsi(cum(close==high and close==low or high==low ? 0 : ((2*close-low-high)/(high-low))*volume), length)
+    
+else if addRsiX == "Elders Force Index"
+    rsiText := "rsi(efi,"
+    rsi(ema(change(close) * volume, length), length)
+    
+else if addRsiX == "Money Flow Index"
+    rsiText := "mfi(hlc3,"
+    rsi(sum(volume * (change(hlc3) <= 0 ? 0 : hlc3), length), sum(volume * (change(hlc3) >= 0 ? 0 : hlc3), length))
+    
+else if addRsiX == "On Balance Volume"
+    rsiText := "rsi(obv,"
+    rsi(cum(sign(change(close)) * volume), length)
+    
+else if addRsiX == "Price Volume Trend"
+    rsiText := "rsi(pvt,"
+    rsi(cum(change(close)/close[1] * volume), length)
+
+srsix = linreg(rsix, smooth, 0)
+
+// Volume Histogram
+mean = sma(volume, length)
+
+volx = if volHist == "Moving Average"
+    sma(volume/mean * size, length)
+    
+else if volHist == "Volume Oscillator"
+    (ema(volume, 5) - ema(volume, 10))/ema(volume, 10) * 100
+
+gColor = color.new(color.gray, 25)
+
+volSma = if relVol
+    sma(volume/mean * size, length)
+
+// Volume Based Colored Bars by KIVANÇ ÖZBİLGİÇ
+
+vbcbColor = if close < open
+    if volume > mean * 1.5
+        #910000
+    else if volume >= mean * 0.5 and volume <= mean * 1.5
+        color.red 
+    else 
+        color.orange
+else
+    if volume > mean * 1.5
+        #006400
+    else if volume >= mean * 0.5 and volume <= mean * 1.5
+        color.green 
+    else 
+        #7FFFD4
+
+    
+// -Plot ======================================================================================== //
+
+// Volume
+plot(nz(volume) and volHist != "Remove Both" ? volume/mean * size : na, color=relVol ? open > close ? volume/mean * abs(size) > abs(volSma) ? color.red : gColor : volume/mean * abs(size) > abs(volSma) ? color.green : color.gray : open > close ? color.red : color.green, style=plot.style_columns, title="Volume, normalized to fit the Scale", transp=55)
+plot(nz(volume) ? volx : na, title="Volume MA/OCS", color=color.teal)
+
+// Threshold Lines
+p1 = hline(75, color=color.red, title="Overbought Higher Theshold Level", linestyle=hline.style_dotted)
+p2 = hline(65, color=color.red, title="Overbought Lower Theshold Level" , linestyle=hline.style_dotted)
+fill(p1, p2,   color=color.red, title="Overbought Background")
+
+hline(50, color=color.gray, title="Middle Line (Bull/Bear Border Line)" , linestyle=hline.style_dotted, linewidth=2)
+
+p3 = hline(35, color=color.green, title="Oversold Higher Theshold Level", linestyle=hline.style_dotted)
+p4 = hline(25, color=color.green, title="Oversold Lower Theshold Level" , linestyle=hline.style_dotted)
+fill(p3, p4,   color=color.green, title="Oversold Background")
+
+// RSI
+plot(srsi, title="Relative Strength of Price", color=#8E1599)
+plot(nz(volume) ? srsix : na, title="Relative Strength of Volume X", color=color.aqua) 
+
+// Volume Based Colored Bars by KIVANÇ ÖZBİLGİÇ
+barcolor(nz(volume) and vbcb ? vbcbColor : na, title = "Volume Based Colored Bars by [KıvançÖZBİLGİÇ]")
+
+// Labels
+volval = if volume > 1000000
+    tostring(volume/1000000, "#.##") + "M"
+else if volume > 1000
+    tostring(volume/1000   , "#.##") + "K"
+
+if lables
+    label rsiLabel = label.new(bar_index, 65, text="Relative Strength Index"
+     ,tooltip="rsi(close, " + tostring(length) + ") value : " + tostring(rsi, "#.##")
+     ,color=#8E1599, style=label.style_label_left, textcolor=color.white)
+    label.delete(rsiLabel[1])
+    
+    if nz(volume)
+        label rsixLabel = label.new(bar_index, 35, text=addRsiX
+         ,tooltip=rsiText + tostring(length) + ") value : " + tostring(rsix, "#.##")
+         ,color=color.aqua, style=label.style_label_left, textcolor=color.white)
+        label.delete(rsixLabel[1])
+        
+        if volHist != "Remove Both"
+            label volLabel = label.new(bar_index, 10, text="Volume, source " + syminfo.prefix + " exchange"
+             ,tooltip="Current Volume value : " + volval
+             ,color=color.teal, style=label.style_label_left, textcolor=color.white)
+            label.delete(volLabel[1])

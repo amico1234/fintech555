@@ -1,0 +1,21 @@
+rising
+Test if the x series is now rising for y bars long.
+rising(source, length) → series[bool]
+Returns
+true if current x is greater than any previous x for y bars back, false otherwise.
+Arguments
+source (series[float]) Series of values to process.
+length (series[integer]) Number of bars (length).
+
+
+
+/////
+
+falling
+Test if the x series is now falling for y bars long.
+falling(source, length) → series[bool]
+Returns
+true if current x is less than any previous x for y bars back, false otherwise.
+Arguments
+source (series[float]) Series of values to process.
+length (series[integer]) Number of bars (length)
