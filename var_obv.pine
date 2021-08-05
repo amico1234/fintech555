@@ -1,0 +1,11 @@
+//IDEA is to easily spot the length of a calm periods based on OBV.
+//METHOD: variance of OBV 
+//ADVISE: cannot be used on its own, just with others (RSI, CCI, Coppock, MACD etc.) Period shall be adjusted to the market.
+
+study("Variance of OBV", shorttitle="VAR_OBV")
+period = input(14, "Period")
+obv = cum(change(close) > 0 ? volume : change(close) < 0 ? -volume : 0*volume)
+d_obv = variance(obv,period)
+dt_obv=d_obv-1
+
+plot((dt_obv), color=orange, title="vOBV")
