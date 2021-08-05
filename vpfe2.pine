@@ -1,0 +1,53 @@
+// Created by @e2e4mfck for tradingview.com
+// 
+// ♚
+// @version=4   
+
+
+//-----------------------------------------------------------------
+// Title {
+study("Voss Predictive Filter", "VPF", false)
+// }
+
+
+//-----------------------------------------------------------------
+// Inputs {
+src             = input(close,  "Source", input.source)
+int     len     = input(20,	    "Length")
+int     pre     = input(3,		"Predict")
+float   band    = input(0.25,	"Bandwidth")
+// }
+
+
+//-----------------------------------------------------------------
+// Voss Predictive Filter {
+f_vpf(_len, _pre, _band, _src) =>
+	float _filt = .0, float _sumC = .0, float _voss = .0
+	_pi  = 2 * asin(1)
+	_ord = 3 * _pre
+	_f1  = cos(2 * _pi / _len)
+	_g1  = cos(_band * 2 * _pi / _len)
+	_s1  = 1 / _g1 - sqrt(1 / (_g1 * _g1) - 1)
+	_s2  = 1 + _s1, _s3 = 1 - _s1
+	_x1  = nz(_src) - nz(_src[2])
+	_x2  = (3 + _ord) / 2
+	for _i = 0 to (_ord - 1)
+		_sumC := _sumC + ((_i + 1) / _ord) * _voss[_ord - _i]
+	if bar_index <= _ord
+		_filt := 0		
+		_voss := 0		
+	else			
+		_filt := 0.5 * _s3 * _x1 + _f1 * _s2 * _filt[1] - _s1 * _filt[2]
+		_voss := _x2 * _filt - _sumC
+	[_voss, _filt]
+
+[voss, filt] = f_vpf(len, pre, band, src)
+// }
+
+
+//-----------------------------------------------------------------
+// Plots {
+plot(filt,  "Filter",   color.red,  2,  plot.style_line)
+plot(voss,  "Voss",	    color.blue, 2,  plot.style_line)
+hline(0.0,  "Zero",     color.gray,     hline.style_dashed, 1)
+// }
