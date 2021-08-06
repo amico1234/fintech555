@@ -1,0 +1,39 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © luminaryfi
+//@version=4
+study("Z-Score BB", precision=4)
+
+n = input(title='n',defval=63)
+disp = input('x̅ (21)',title='Display Z-Score from:', options=['x̅ (21)','μ (63)'])
+
+price_sample = array.new_float(0)
+for i = 0 to 21
+	array.push(price_sample,close[i])
+
+price_sample_mean = array.avg(price_sample)
+price_pop_mean = sma(close,n)
+price_pop_sd = stdev(close,n)
+sqrt_n = sqrt(n)
+price_pop_se = price_pop_sd/ sqrt_n
+
+z = (price_sample_mean - price_pop_mean)/ price_pop_se
+z_abs = abs(z) 
+
+z_low_sample_mean = price_sample_mean - z_abs
+z_high_sample_mean = price_sample_mean + z_abs
+
+z_low_pop_mean = price_pop_mean - z_abs
+z_high_pop_mean = price_pop_mean + z_abs
+
+
+plot(disp=='z_high_pop_mean' or disp=='μ (63)'?z_high_pop_mean:na, title='Z-Low',color=#FF9800, transp=10, linewidth=2)
+plot(disp=='z_low_pop_mean' or disp=='μ (63)'?z_low_pop_mean:na, title='Z-High', color=#ab00ad, transp=10, linewidth=2)
+plot(disp=='price_pop_mean' or disp=='μ (63)'?price_pop_mean:na, title='μ (63)', color=#ff00f1, transp=15, linewidth=2)
+
+
+plot(disp=='z_high_sample_mean' or disp=='x̅ (21)'?z_high_sample_mean:na, title='Z-High', color=#040af9, transp=10, linewidth=2)
+//plot(disp=='z_low_sample_mean' or disp=='x̅ (21)'?z_low_sample_mean:na, title='Z-Low', color=#040af9, transp=10, linewidth=2)
+
+plot(disp=='z_low_sample_mean' or disp=='x̅ (21)'?z_low_sample_mean:na, title='Z-Low',color=#808000, transp=10, linewidth=2)
+
+plot(disp=='price_sample_mean' or disp=='x̅ (21)'?price_sample_mean:na, title='x̅ (21)', color=#00adf8, transp=15, linewidth=2)
