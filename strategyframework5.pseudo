@@ -112,6 +112,12 @@ ery/vxxle
 xle vs vxxle - rank1
 erx vs ery - rank7
 
+
+//corell erx with dig, and all insight. that insight of erx is also on dig etc.
+
+//signal if alert is act, according to hors
+
+
 // open interst , fut only !!!
 var open intresst stoch technical (cl1!)
 
@@ -122,7 +128,7 @@ var open intresst stoch technical (cl1!)
 
 *RENKO, RENKO STRATEGY 
 **JUMBO TRADE, emplied volatility, pgo on RENKO
-***JUMBO RED GREEN, BJ TSI, SUPPLY DE, FVG TREND, LOGISTIC, LOGISTIC diff, IIOT, RSI_LB, mc b free, open intresst stoch (only fut !!!)
+***JUMBO RED GREEN, BJ TSI, SUPPLY DE (only with volume !), FVG TREND, LOGISTIC, LOGISTIC diff, IIOT, RSI_LB, mc b free, open intresst stoch (only fut !!!)
 *****fats alert (very short)
 *****decorate: psolb, vortex trend tracker rsi, logistic trix
 //financial var
