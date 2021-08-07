@@ -1,0 +1,148 @@
+//@version=3
+
+study(title = "VDUB BB %B REVERSAL_v4.3 revised by JustUncleL", shorttitle = "vdub_BB_%B_rev_v4.3")
+
+//
+// Original Author: Vdub
+// Revisions By:    4.1,4.2,4.3 by JustIncleL
+//
+//    Draws Bollinger Band %B indicator, optionally highlights Bullish and Bearish bars,
+//    optionally shows %B divergence and optionally shows coloured session zones.
+//
+// R4.3 By JustUncleL: some minor updates
+//  - Updated for Version 3 Pinescript compliance.
+//  - Added option to change Session times.
+//  - Change to 3 Session times: Asia, Europe and NewYork
+//  - Added Colourung under %B curve to Highlight %B peaks.
+//  HINT: I find Divergence works better at the Higher Time Frames 4hr or Daily.
+//  10-Aug-2017
+//  - Changed to session type input for Session Times.
+//  HINT #2: Look for Divergence markers that start from Peaks above 50%, or below -50%
+//
+// R4.2 By JustUncleL:
+//  - Added optional Session Zone Colouring.
+//  - Added optional Divergence finding
+//  - Changed Calculation to centre BB% around zero line +/- 50%
+// R4.1 By JustUncleL:
+//  - Change the way the resolution is calculated for BO expiry.
+//  - Corrected some drawing code.
+//  - Updated Default settings.
+//
+
+length    = input(20, minval=2,title="Bollinger Band Length")
+mult      = input(2, minval=0.001, maxval=5,title="Bollinger Band StdDev")
+sbar      = input(false, title="Color Code Bars")
+sSessions = input(false, title="Show Coloured Exchange Sessions")
+asiaSion  = input("1800-0400", title="Asia Session Time",type=session)
+euroSion  = input("0300-1200", title="Europe Session Time",type=session)
+nySion    = input("0800-1700", title="New York Session Time",type=session)
+sBO       = input(false, title="Show Binary Option Markers")
+intRes    = input(5,     title="Multiplier for BO Expiry")
+src       = input(close, title="Bollinger Band Source")
+
+green100 = #008000FF
+lime100  = #00FF00FF
+red100   = #FF0000FF
+blue100  = #0000FFFF
+aqua100  = #00FFFFFF
+darkred100 = #8B0000FF
+gray100 = #808080FF
+DodgerBlue = #1E90FF
+
+//
+basis = sma(src, length)
+dev = mult*stdev(src, length)
+upper = basis + dev
+lower = basis - dev
+bbr = (100*(src - lower)/(upper - lower))-50
+
+// Get Direction From Moving Average
+direction = rising(bbr,1) ? 1 : falling(bbr,1) ? -1 : 0
+// Count Bars going up or going down
+up = 0
+down = 0
+up   := bbr[1]<0 and direction>0? 1 : direction<0 or bbr>0? 0 : up[1]
+down := bbr[1]>0 and direction<0? 1 : direction>0 or bbr<0? 0 : down[1]
+
+// - /SERIES VARIABLES
+
+// - PLOTTING
+
+hline(0,color=black,linestyle=dashed,linewidth=1)
+hline(50,color=fuchsia,linestyle=dashed,linewidth=1)
+hline(-50,color=lime,linestyle=dashed,linewidth=1)
+plot(100,color=red,transp=100)
+plot(-100,color=green,transp=100)
+plot(bbr, color=black, style=line, linewidth=2,transp=20)
+plot(bbr, color = up?green:down?red:gray, style=area,transp=70)
+
+
+//----
+barcolor( sbar? bbr > 0 ? green100 :red100 : na)
+
+//=== Session and BO backgound colouring
+//
+timeinrange(res, sess) => time(res, sess) != 0
+//
+// Session background
+bgcolor(sSessions?timeinrange(period, asiaSion) ? yellow : na: na, transp=90,title="Asian Session")
+bgcolor(sSessions?timeinrange(period, euroSion) ? lime : na: na, transp=90, title="Europe Session")
+bgcolor(sSessions?timeinrange(period, nySion)   ? blue : na: na, transp=90, title="NY Session")
+//
+//Calculate BO time frame from current time frame.
+tf = ismonthly? tostring(interval*intRes,"###M") : isweekly? tostring(interval*intRes,"###W") : isdaily?  tostring(interval*intRes,"###D") : isintraday ? tostring(interval*intRes,"####") : '60'
+tf_bool = 0
+tf_bool := na(tf_bool[1]) ? 0 : change(time(tf)) and tf_bool[1] == 0 ? 1 : change(time(tf)) and tf_bool[1] == 1 ? 0 : tf_bool[1]
+bgcolor(sBO? tf_bool == 1 ? gray : silver : na, transp=80, offset=0, title="BO Expiry")
+//
+// === end of Background Colouring.
+//
+// === DIVERGENCE Section.
+//
+uDiv    = input(false,"Show Divergence Channel")
+multi   = input(0.1,minval=0.0,maxval=3.0,title="Divergence Channel Width Factor (Stddev)")
+uHid    = input( false, title="Show Hidden Divergence")
+uReg    = input(false, title="Show Regular Divergence")
+//
+uDiv := uReg or uHid ? uDiv : false
+
+
+//  ||  Functions:
+
+f_top_fractal(_src)=>_src[4] < _src[2] and _src[3] < _src[2] and _src[2] > _src[1] and _src[2] > _src[0]
+f_bot_fractal(_src)=>_src[4] > _src[2] and _src[3] > _src[2] and _src[2] < _src[1] and _src[2] < _src[0]
+f_fractalize(_src)=>f_top_fractal(_src) ? 1 : f_bot_fractal(_src) ? -1 : 0
+
+// === /BASE FUNCTIONS ===
+
+rsi_high = bbr
+rsi_low = bbr
+offset_ = multi*stdev(bbr,length)
+fractal_top_rsi = f_fractalize(rsi_high) > 0 ? rsi_high[2] : na
+fractal_bot_rsi = f_fractalize(rsi_low) < 0 ? rsi_low[2] : na
+
+rsi_high_prev = valuewhen(fractal_top_rsi, rsi_high[2], 1) 
+rsi_high_price = valuewhen(fractal_top_rsi, high[2], 1)
+rsi_low_prev = valuewhen(fractal_bot_rsi, rsi_low[2], 1) 
+rsi_low_price = valuewhen(fractal_bot_rsi, low[2], 1)
+
+regular_bearish_div = fractal_top_rsi and high[2] > rsi_high_price and rsi_high[2] < rsi_high_prev
+hidden_bearish_div = fractal_top_rsi and high[2] < rsi_high_price and rsi_high[2] > rsi_high_prev
+regular_bullish_div = fractal_bot_rsi and low[2] < rsi_low_price and rsi_low[2] > rsi_low_prev
+hidden_bullish_div = fractal_bot_rsi and low[2] > rsi_low_price and rsi_low[2] < rsi_low_prev
+
+plot(title='RSI High', series=uDiv?rsi_high:na, color=gray)
+plot(title='RSI Low', series=uDiv?rsi_low:na, color=gray)
+plot(title='RSI H F', series=uDiv?fractal_top_rsi+offset_:na, color=red, offset=-2)
+plot(title='RSI L F', series=uDiv?fractal_bot_rsi-offset_:na, color=green, offset=-2)
+plot(title='RSI H D', series=uDiv?fractal_top_rsi+offset_:na, style=circles, color=(regular_bearish_div and uReg) or (hidden_bearish_div and uHid)? maroon : gray, linewidth=3, offset=-2)
+plot(title='RSI L D', series=uDiv?fractal_bot_rsi-offset_:na, style=circles, color=(regular_bullish_div and uReg) or (hidden_bullish_div and uHid)? green : gray, linewidth=3, offset=-2)
+
+plotshape(title='+RBD', series=regular_bearish_div and uReg? rsi_high[2]+offset_ : na, text='Regular', style=shape.labeldown, location=location.absolute, color=maroon, textcolor=white, offset=-2)
+plotshape(title='+HBD', series=hidden_bearish_div and uHid? rsi_high[2]+offset_ : na, text='hidden', style=shape.labeldown, location=location.absolute, color=maroon, textcolor=white, offset=-2)
+plotshape(title='-RBD', series=regular_bullish_div and uReg? rsi_low[2]-offset_ : na, text='Regular', style=shape.labelup, location=location.absolute, color=green, textcolor=white, offset=-2)
+plotshape(title='-HBD', series=hidden_bullish_div and uHid? rsi_low[2]-offset_ : na, text='hidden', style=shape.labelup, location=location.absolute, color=green, textcolor=white, offset=-2)
+
+//
+// eof
+// eof

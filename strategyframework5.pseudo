@@ -86,7 +86,7 @@ MimicEtfLong2
 MimicEtfShort1 ////Default: "dug"
 MimicEtfSjort2
 MimicEtfLOngReg //Default: frak
-
+fred
 
 // ETF OF FUT
 VAR EtfFut //uso 
