@@ -1,0 +1,142 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Ami Shmueli
+//@version=4
+
+study(title="AmiComStrategy", shorttitle="AmiComStrategy")
+
+
+// ======= var trade param ======= //
+
+// var corell
+var  float MinimumCorellPlus  = input (title="CorellPlus", defval = 0.89, minval=0.80, maxval=1.00, step=0.01) // 0.89
+var  float MinimumCorellMinus = input (title="CorellMinus", defval = -0.89, minval= -1.00, maxval= -0.80,  step=0.01) // -0.89
+var CorellTimeFrame = input(title="CorellTimeFrame", defval="5D", options=["5D", "13D", "18D"]) // String !!!
+
+// var bool corell
+IsNotCorell = false
+IsCorell = false
+
+// count corell
+
+NumCorellSec = 0
+NumCorellInsight = 0
+
+// var Trade session
+var TradingHoursSession = input(title="TradingHoursSession", defval="1300-1700", options=["24x7", "0900-1300", "1300-1700", "1700-2100"]) // String !!!
+
+// var UpTime
+var SecBullUpTime = input (title="SecBullUpTime", defval = "3H", options=["3H", "5H", "8H", "1D", "2D"])  // String !!!
+var SecBearDownTime = input (title="SecBullUpTime", defval = "3H", options=["3H", "5H", "8H", "1D", "2D"]) // String !!!
+
+var InsightAlertTime = input (title="InsightAlertTime", defval = "3H", options=["3H", "5H", "8H", "1D", "2D"]) // String !!!
+
+// var number of alets per day
+AlertsPerDay = 0
+lertsCurrentDay = 0
+AlertsDayBefore = 0
+
+// ======= var insights array name ======= //
+
+// var Insights array name: 5 low: Decorative
+InsightName5DecorArray = array.new_string(0)
+ 
+// var Insights array name: 4 
+InsightName4Array = array.new_string(0)
+
+// var Insights array name: 3
+InsightName3Array = array.new_string(0)
+
+// var Insights array name: 2
+InsightName2Array = array.new_string(0)
+
+// var Insights array name: 1
+InsightName1Array = array.new_string(0)
+
+
+
+// ======= var insights ======= //
+var Insight1ofRank5 = "Insight1ofRank5" 
+var Insight2ofRank5 = "Insight2ofRank5" 
+var Insight3ofRank5 = "Insight3ofRank5" 
+var Insight4ofRank5 = "Insight4ofRank5" 
+var Insight5ofRank5 = "Insight5ofRank5" 
+
+var Insight1ofRank4 = "Insight1ofRank4" 
+var Insight2ofRank4 = "Insight2ofRank4" 
+var Insight3ofRank4 = "Insight3ofRank4" 
+var Insight4ofRank4 = "Insight4ofRank4" 
+var Insight5ofRank4 = "Insight5ofRank4" 
+
+var Insight1ofRank3 = "Insight1ofRank3" 
+var Insight2ofRank3 = "Insight2ofRank3" 
+var Insight3ofRank3 = "Insight3ofRank3" 
+var Insight4ofRank3 = "Insight4ofRank3" 
+var Insight5ofRank3 = "Insight5ofRank3" 
+
+var Insight1ofRank2 = "Insight1ofRank2" 
+var Insight2ofRank2 = "Insight2ofRank2" 
+var Insight3ofRank2 = "Insight3ofRank2" 
+var Insight4ofRank2 = "Insight4ofRank2" 
+var Insight5ofRank2 = "Insight5ofRank2" 
+
+var Insight1ofRank1 = "Insight1ofRank1" 
+var Insight2ofRank1 = "Insight2ofRank1" 
+var Insight3ofRank1 = "Insight3ofRank1" 
+var Insight4ofRank1 = "Insight4ofRank1" 
+var Insight5ofRank1 = "Insight5ofRank1" 
+
+// array element 
+
+InsightName5DecorArray = ("Insight1ofRank5","Insight2ofRank5" )
+
+
+// ======= var rank array ======= //
+
+
+
+
+// max rank points, without bonus // 100
+// max rank points, with bonus //118
+
+// curreny total rank point
+
+// current rank
+// number of insight out of insight, in a rank, current day
+// number of insight out of insight, in a rank, comulative
+
+// bonus rank for corell
+// bonus of number of alerts per day
+
+
+
+// var inflation
+var InflationPrice = input (title="InflationPrice", defval = "0")
+
+//
+
+
+plot (close)
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//plot(time(timeframe.period, s))
+
+//Mode = input(title = "MA Mode", defval="SMMA", options=["TMA","ALMA", "EMA", "Kijun", "Kijun v2", "McGinley", "IDWMA", "A2RMA", "EDSMA"])
+
+// vq0_th = input(1.64, title="Threshold 1")
+// vq0_th2 = input(1.96, title="Threshold 2")
+// vq0_th3 = input(2.58, title="Threshold 3")
+
+
+// int     length      = input(20, title="Length", minval=1)
+// string  bbmatype    = input(defval='SMA', title='Bollinger Bands Calculation Type', options=['SMA', 'EMA', 'WMA', 'VWMA', 'RMA'])
+// string  kcmatype    = input(defval='SMA', title='Keltner Channel Calculation Type', options=['SMA', 'EMA', 'WMA', 'VWMA', 'RMA'])
+// int     color_1     = input(title="Color Format", defval=2, minval=1, maxval=6)
+// bool    drdiv       = input(defval=false, title="Draw Divergence")
+// bool    bgoff       = input(defval=false, title="Background Off")
+// bool    darkm       = input(defval=true, title="Gray Background for Dark Mode")
+// bool    zerold      = input(defval=false, title="Zero Line Dots")
+// bool    lowsqzwht   = input(defval=true, title="Low Squeeze White")
