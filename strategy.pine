@@ -87,8 +87,8 @@ var Insight5ofRank1 = "Insight5ofRank1"
 
 // array element 
 
-InsightName5DecorArray = ("Insight1ofRank5","Insight2ofRank5" )
 
+InsightName1Array = array.push (Insight1ofRank1, Insight1ofRank2)
 
 // ======= var rank array ======= //
 
