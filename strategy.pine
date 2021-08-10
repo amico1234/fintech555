@@ -30,6 +30,19 @@ var SecBearDownTime = input (title="SecBullUpTime", defval = "3H", options=["3H"
 
 var InsightAlertTime = input (title="InsightAlertTime", defval = "3H", options=["3H", "5H", "8H", "1D", "2D"]) // String !!!
 
+// ======= sec players ======= //
+purple list
+fred
+
+// ======= ext players (input) ======= //
+
+rig
+
+// ======= insight players ======= //
+
+
+
+
 // var number of alets per day
 AlertsPerDay = 0
 lertsCurrentDay = 0
@@ -87,7 +100,7 @@ var Insight5ofRank1 = "Insight5ofRank1"
 
 // array element 
 
-
+// array.insert(alertcondition = )
 InsightName1Array = array.push (Insight1ofRank1, Insight1ofRank2)
 
 // ======= var rank array ======= //
@@ -114,9 +127,10 @@ var InflationPrice = input (title="InflationPrice", defval = "0")
 
 //
 
-
+// e2 resistance, setup, reload (input)
 plot (close)
 
+// cass info band wti: 75.5, 63.5 , 53.5
 
 
 

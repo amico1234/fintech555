@@ -4,3 +4,4 @@
 [0m2021.08.08 13:03:02 WARN  no build tool detected in workspace '/opt/github/fintech555repo/fintech555'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. [0m
 Aug 08, 2021 6:50:22 PM org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
 INFO: Unsupported notification method: $/setTrace
+[0m2021.08.09 00:20:27 INFO  shutting down Metals[0m
