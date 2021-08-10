@@ -33,6 +33,7 @@ var InsightAlertTime = input (title="InsightAlertTime", defval = "3H", options=[
 // ======= sec players ======= //
 purple list
 fred
+ethanol
 
 // ======= ext players (input) ======= //
 
