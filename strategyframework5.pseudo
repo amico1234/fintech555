@@ -27,6 +27,42 @@ var erning Date
 //
 
 
+// ======= strategy functions sa,ple ======= //
+// STRATEGy Functions
+f_MACross() =>
+    sma1   = f_getMA(EntryType3MAType1, EntryType3Source1, EntryType3Len1)
+    sma2   = f_getMA(EntryType3MAType2, EntryType3Source2, EntryType3Len2)
+    Long   = crossover(sma1, sma2)
+    Short  = crossunder(sma1, sma2)
+    
+    Signal = Long ? 1 : Short ? -1 : 0
+
+f_RSICross() =>
+    rsi    = rsi(close, 14)
+    Long   = crossover(rsi,  30)
+    Short  = crossunder(rsi, 70)
+    
+    Signal = Long ? 1 : Short ? -1 : 0 
+
+f_MACDCross() =>
+    [_,_,_macdHist] = macd(close, 12, 26, 9)
+    Long            = crossover(_macdHist, 0)
+    Short           = crossunder(_macdHist,0)
+    
+    Signal          = Long ? 1 : Short ? -1 : 0 
+
+f_supertrend() =>
+    [_, _dir]       = supertrend(EntryType5Factor, EntryType5Period)
+    Long            = crossover(_dir, 0)
+    Short           = crossunder(_dir, 0)
+    
+    Signal          = Long ? 1 : Short ? -1 : 0 
+
+    ////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 //STRATEGY RULES
 LIMIT trade
 NUMMBER OF TRADES
