@@ -5,6 +5,15 @@
 study(title="AmiComStrategy", shorttitle="AmiComStrategy")
 
 
+// ======= level ======= //
+1 fats, isob, fvgtrend, logdiff, demendsupplyvolume //
+2 iiot, bjtsi
+3 sroc, macz (mcfree)
+4 JUMBO TRADE, VORTEX
+5 RENKO, RENKO STRATEGY
+
+
+
 // ======= var trade param ======= //
 
 // tale also from trading engine open source
