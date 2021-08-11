@@ -137,11 +137,15 @@ var open intresst stoch technical (cl1!)
 
 7 (??? zgraph, one two graph daily erx xry uso uco )
 
-*RENKO, RENKO STRATEGY 
+*RENKO, RENKO STRATEGY
 **JUMBO TRADE, emplied volatility, pgo on RENKO
 ***JUMBO RED GREEN, BJ TSI, SUPPLY DE (only with volume !), FVG TREND, LOGISTIC, LOGISTIC diff, IIOT, RSI_LB, mc b free, open intresst stoch (only fut !!!)
 *****fats alert (very short)
-*****decorate: psolb, vortex trend tracker rsi, logistic trix
+*****decorate: psolb, vortex trend tracker rsi, logistic trix, clam, bj reversal
+
+// wave
+sroc ( only for wave change), zero, lines
+
 //financial var
 
 // ======= TSIreg ======= //

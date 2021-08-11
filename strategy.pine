@@ -7,6 +7,8 @@ study(title="AmiComStrategy", shorttitle="AmiComStrategy")
 
 // ======= var trade param ======= //
 
+// tale also from trading engine open source
+
 // var corell
 var  float MinimumCorellPlus  = input (title="CorellPlus", defval = 0.89, minval=0.80, maxval=1.00, step=0.01) // 0.89
 var  float MinimumCorellMinus = input (title="CorellMinus", defval = -0.89, minval= -1.00, maxval= -0.80,  step=0.01) // -0.89
@@ -34,14 +36,23 @@ var InsightAlertTime = input (title="InsightAlertTime", defval = "3H", options=[
 purple list
 fred
 ethanol
+cass
+snp
+
+// mumber of securities
+// up to 40 securities to check corell 
 
 // ======= ext players (input) ======= //
 
 rig
+eia
 
 // ======= insight players ======= //
 
+// regular 
 
+// volatility 
+note: crsi (only for vxxle, xle !!!!!)
 
 
 // var number of alets per day
