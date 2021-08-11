@@ -165,13 +165,16 @@ erx vs ery - rank7
 //signal if alert is act, according to hors
 
 
+// db, prices band: create high low dates, of corell : erx, cl1! / xle / 
+
+
 // open interst , fut only !!!
 var open intresst stoch technical (cl1!)
 
 // insights list
 //insights rank 
 
-7 (??? zgraph, one two graph daily erx xry uso uco )
+******* any of alerts add/short (pyramid) *******
 
 *RENKO, RENKO STRATEGY
 **JUMBO TRADE, emplied volatility, pgo on RENKO
