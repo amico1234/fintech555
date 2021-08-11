@@ -6,11 +6,11 @@ study(title="AmiComStrategy", shorttitle="AmiComStrategy")
 
 
 // ======= level ======= //
-1 fats, isob, fvgtrend, logdiff, demendsupplyvolume //
-2 iiot, bjtsi
-3 sroc, macz (mcfree)
-4 JUMBO TRADE, VORTEX
-5 RENKO, RENKO STRATEGY
+1 fats, isob, fvgtrend, logdiff, demendsupplyvolume with volume
+2 iiot, bjtsi, logistic
+3 sroc, macz (mcfree), JUMBO REDGREEN
+4 JUMBO TRADE
+5 RENKO, RENKO STRATEGY, pgo renko
 
 
 
