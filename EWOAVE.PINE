@@ -1,0 +1,10 @@
+//@version=2
+//@author Koryu
+study(title = "Elliott Wave Oscillator", shorttitle="EWO")
+src = input(close, title="source")
+sma1length = input(5)
+sma2length = input(35)
+UsePercent = input(title="Show Dif as percent of current Candle", type=bool, defval=true)
+smadif=iff(UsePercent,(sma(src, sma1length) - sma(src, sma2length)) / src * 100, sma(src, sma1length) - sma(src, sma2length))
+col=smadif <= 0 ? red : green
+plot(smadif, color=col, style=histogram, linewidth=2)
