@@ -1,0 +1,63 @@
+//@version=3
+
+//13th Feb 2019
+
+//written by Cubantobacco
+//https://twitter.com/cubantobacco
+
+//credit to Tradekek for the idea
+//https://twitter.com/tradekek
+
+//Swing at Pandilla de Flujo, ya better not miss
+
+
+study(title="Multi Timeframe Rolling Bitmex Liquidation Levels", shorttitle="MTF Rolling Bitmex Liqs", overlay=true)
+
+
+//INPUTS
+
+tf = input('15', title = "Use a Different Timeframe? e.g. 1, 60, 240, D, 3D, W, etc." )
+
+VWMAp = input(title = "VWMA Length", defval = 20, minval = 1)
+useVWAP = input(false, title = "Use VWAP instead?")
+showbase = input(false, title = "Show Base Line?")
+showx100 = input(true, title = "Show 100x Leverage?")
+showx50 = input(true, title = "Show 50x Leverage?")
+showx25 = input(true, title = "Show 25x Leverage")
+
+//CALCULATIONS
+
+base = security(tickerid, tf, useVWAP?vwap(hlc3):vwma(hlc3, VWMAp))
+
+x100L = security(tickerid, tf, base * (1 - 0.0049))
+x100S = security(tickerid, tf, base * (1 + 0.0051))
+
+x50L = security(tickerid, tf, base * (1 - 0.0147))
+x50S = security(tickerid, tf, base * (1 + 0.0155))
+
+x25L = security(tickerid, tf, base * (1 - 0.0338))
+x25S = security(tickerid, tf, base * (1 + 0.0370))
+
+
+//PLOTS
+
+plot(showbase?base:na, color=white, transp=60, title="VWAP", style=linebr, linewidth=1)
+plotchar(showbase?base:na, show_last=1, transp=60, char="-", text="Base", size=size.tiny, location=location.absolute, offset=0, color=white)
+
+plot(showx100?x100L:na, color=yellow, transp=60, title="100x Long", style=linebr, linewidth=1)
+plotchar(showx100?x100L:na, show_last=1, transp=60, char="-", text="100x Long", size=size.tiny, location=location.absolute, offset=0, color=yellow)
+
+plot(showx100?x100S:na, color=yellow, transp=60, title="100x Short", style=linebr, linewidth=1)
+plotchar(showx100?x100S:na, show_last=1, transp=60, char="-", text="100x Short", size=size.tiny, location=location.absolute, offset=0, color=yellow)
+
+plot(showx50?x50L:na, color=orange, transp=60, title="50x Long", style=linebr, linewidth=1)
+plotchar(showx50?x50L:na, show_last=1, transp=60, char="-", text="50x Long", size=size.tiny, location=location.absolute, offset=0, color=orange)
+
+plot(showx50?x50S:na, color=orange, transp=60, title="50x Short", style=linebr, linewidth=1)
+plotchar(showx50?x50S:na, show_last=1, transp=60, char="-", text="50x Short", size=size.tiny, location=location.absolute, offset=0, color=orange)
+
+plot(showx25?x25L:na, color=red, transp=60, title="25x Long", style=linebr, linewidth=1)
+plotchar(showx25?x25L:na, show_last=1, transp=60, char="-", text="25x Long", size=size.tiny, location=location.absolute, offset=0, color=red)
+
+plot(showx25?x25S:na, color=red, transp=60, title="25x Shprt", style=linebr, linewidth=1)
+plotchar(showx25?x25S:na, show_last=1, transp=60, char="-", text="25x Short", size=size.tiny, location=location.absolute, offset=0, color=red)
