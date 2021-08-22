@@ -1,0 +1,191 @@
+//@version=3
+//main script from here https://in.tradingview.com/script/vXakWc27-Keltner-Channel-APEX/
+study("Keltner Channel signals",overlay=true)
+src                     = input(close, type=source)
+
+separatorAverage        = input(false, title="⎻⎻⎻ MA Base Setting ⎻⎻⎻")
+movingAverageLength     = input(34,    minval=1, title="MA length")
+movingAverageType       = input("EMA", title="MA", options=["SMA", "EMA", "WMA", "DEMA", "TEMA", "TRIMA", "KAMA", "MAMA", "T3"], type=string)
+separatorKC             = input(false, title="⎻⎻⎻ CHANNELS  ⎻⎻⎻")
+atrMultiplierMin        = input(1.5,   minval=0, type = float,  title="ATR Multiplier Min")
+atrMultiplierMax        = input(3.5,   minval=0, type = float,  title="ATR Multiplier Max")
+atrType                 = input("EMA", title="ATR Smoothing MA", options=["SMA", "EMA", "WMA", "DEMA", "TEMA", "TRIMA", "KAMA", "MAMA", "T3"], type=string)
+atrLength               = input(88,   minval=1, title="ATR Smoothing Length")
+kc_usePer               = input(defval = false, title = "Different Time-Period ?")
+kc_res                  = input("15", type=resolution, title = "Time-Period")
+
+kama(src, len)=>
+    xvnoise = abs(src - src[1])
+    nfastend = 0.666
+    nslowend = 0.0645
+    nsignal = abs(src - src[len])
+    nnoise = sum(xvnoise, len)
+    nefratio = iff(nnoise != 0, nsignal / nnoise, 0)
+    nsmooth = pow(nefratio * (nfastend - nslowend) + nslowend, 2)
+    nAMA = 0.0
+    nAMA := nz(nAMA[1]) + nsmooth * (src - nz(nAMA[1]))
+
+mama(src, len)=>
+    fl=0.5
+    sl=0.05
+    pi = 3.1415926
+    sp = (4*src + 3*src[1] + 2*src[2] + src[3]) / 10.0
+    p  = 0.0
+    i2 = 0.0
+    q2 = 0.0
+    dt = (.0962*sp + .5769*nz(sp[2]) - .5769*nz(sp[4])- .0962*nz(sp[6]))*(.075*nz(p[1]) + .54)
+    q1 = (.0962*dt + .5769*nz(dt[2]) - .5769*nz(dt[4])- .0962*nz(dt[6]))*(.075*nz(p[1]) + .54)
+    i1 = nz(dt[3])
+    jI = (.0962*i1 + .5769*nz(i1[2]) - .5769*nz(i1[4])- .0962*nz(i1[6]))*(.075*nz(p[1]) + .54)
+    jq = (.0962*q1 + .5769*nz(q1[2]) - .5769*nz(q1[4])- .0962*nz(q1[6]))*(.075*nz(p[1]) + .54)
+    i2_ = i1 - jq
+    q2_ = q1 + jI
+    i2 := .2*i2_ + .8*nz(i2[1])
+    q2 := .2*q2_ + .8*nz(q2[1])
+    re_ = i2*nz(i2[1]) + q2*nz(q2[1])
+    im_ = i2*nz(q2[1]) - q2*nz(i2[1])
+    re = 0.0
+    im = 0.0
+    re := .2*re_ + .8*nz(re[1])
+    im := .2*im_ + .8*nz(im[1])
+    p1 = iff(im!=0 and re!=0, 2*pi/atan(im/re), nz(p[1]))
+    p2 = iff(p1 > 1.5*nz(p1[1]), 1.5*nz(p1[1]), iff(p1 < 0.67*nz(p1[1]), 0.67*nz(p1[1]), p1))
+    p3 = iff(p2<6, 6, iff (p2 > 50, 50, p2))
+    p := .2*p3 + .8*nz(p3[1])
+    spp  = 0.0
+    spp := .33*p + .67*nz(spp[1])
+    phase = 180/pi * atan(q1 / i1)
+    dphase_ = nz(phase[1]) - phase
+    dphase = iff(dphase_< 1, 1, dphase_)
+    alpha_ = fl / dphase
+    alpha = iff(alpha_ < sl, sl, iff(alpha_ > fl, fl, alpha_))
+    mama = 0.0
+    mama := alpha*src + (1 - alpha)*nz(mama[1])
+
+t3(src, len)=>
+    xe1_1 = ema(src,    len)
+    xe2_1 = ema(xe1_1,  len)
+    xe3_1 = ema(xe2_1,  len)
+    xe4_1 = ema(xe3_1,  len)
+    xe5_1 = ema(xe4_1,  len)
+    xe6_1 = ema(xe5_1,  len)
+    b_1 = 0.7
+    c1_1 = -b_1*b_1*b_1
+    c2_1 = 3*b_1*b_1+3*b_1*b_1*b_1
+    c3_1 = -6*b_1*b_1-3*b_1-3*b_1*b_1*b_1
+    c4_1 = 1+3*b_1+b_1*b_1*b_1+3*b_1*b_1
+    nT3Average_1 = c1_1 * xe6_1 + c2_1 * xe5_1 + c3_1 * xe4_1 + c4_1 * xe3_1
+
+variant(type, src, len) =>
+    v1 = sma(src, len)                                                  // Simple
+    v2 = ema(src, len)                                                  // Exponential
+    v3 = 2 * v2 - ema(v2, len)                                          // Double Exponential
+    v4 = 3 * (v2 - ema(v2, len)) + ema(ema(v2, len), len)               // Triple Exponential
+    v5 = wma(src, len)                                                  // Weighted
+    v6 = sma(sma(src, ceil(len / 2)), floor(len / 2) + 1)               // TRIMA
+    v7 = kama(src, len)                                                 // KAMA
+    v8 = mama(src, len)                                                 // MAMA
+    v9 = t3(src, len)                                                   // T3
+    type=="EMA"?v2 : type=="DEMA"?v3 : type=="TEMA"?v4 : type=="WMA"?v5 : type=="TRIMA"?v6 : type=="KAMA"?v7 : type=="MAMA"?v8 : type=="T3"?v9 : v1
+
+//MA Base Calculation 
+KeltnerChannelMid        = variant(movingAverageType, src, movingAverageLength)
+KeltnerChannelRange      = variant(atrType, tr , atrLength) 
+KeltnerChannelBottomMin  = KeltnerChannelMid - KeltnerChannelRange * atrMultiplierMin 
+KeltnerChannelBottomMax  = KeltnerChannelMid - KeltnerChannelRange * atrMultiplierMax 
+KeltnerChannelTopMin     = KeltnerChannelMid + KeltnerChannelRange * atrMultiplierMin 
+KeltnerChannelTopMax     = KeltnerChannelMid + KeltnerChannelRange * atrMultiplierMax
+
+resKeltnerChannelMid        = kc_usePer ? security(tickerid, kc_res, KeltnerChannelMid) : KeltnerChannelMid
+resKeltnerChannelRange      = kc_usePer ? security(tickerid, kc_res, KeltnerChannelRange) : KeltnerChannelRange
+resKeltnerChannelBottomMin  = kc_usePer ? security(tickerid, kc_res, KeltnerChannelBottomMin) : KeltnerChannelBottomMin
+resKeltnerChannelBottomMax  = kc_usePer ? security(tickerid, kc_res, KeltnerChannelBottomMax) : KeltnerChannelBottomMax
+resKeltnerChannelTopMin     = kc_usePer ? security(tickerid, kc_res, KeltnerChannelTopMin) : KeltnerChannelTopMin
+resKeltnerChannelTopMax     = kc_usePer ? security(tickerid, kc_res, KeltnerChannelTopMax) : KeltnerChannelTopMax
+
+plot(resKeltnerChannelMid,        color=orange,transp = 80, linewidth=1, title = "KC BASE")
+kc_top_min = plot(resKeltnerChannelTopMin,     color=red, transp = 70,   title = "KC TOP MIN")
+kc_top_max =plot(resKeltnerChannelTopMax,     color=red, transp = 70,    title = "KC TOP MAX")
+fill(kc_top_min,  kc_top_max, color = lime, transp = 85,              title = "FILL KC TOP")
+
+kc_bot_min = plot(resKeltnerChannelBottomMin,  color=lime, transp = 70, title = "KC BOTTOM MIN")
+kc_bot_max = plot(resKeltnerChannelBottomMax ,  color=lime, transp = 70, title = "KC BOTTOM MAX")
+fill(kc_bot_min, kc_bot_max , color = lime, transp = 85,             title = "FILL KC BOT")
+
+
+
+//
+length = input(title="keltner Length", type=integer, defval=34, minval=1)
+multiplier = input(title="keltner Deviation", type=float, defval=2, minval=1)
+overbought = input(title="Overbought", type=integer, defval=1, minval=1)
+oversold = input(title="Oversold", type=integer, defval=0, minval=1)
+custom_timeframe = input(title="Use another Timeframe?", type=bool, defval=false)
+highTimeFrame = input(title="Select The Timeframe", type=resolution, defval="60")
+res1 = custom_timeframe ? highTimeFrame : period
+
+smabasis = resKeltnerChannelMid
+stdev = stdev(close, length)
+cierre = security(tickerid, res1, close, false)
+alta = security(tickerid, res1, high, false)
+baja = security(tickerid, res1, low, false)
+basis1 = security(tickerid, res1, smabasis, false)
+stdevb = security(tickerid, res1, stdev, false)
+dev = multiplier * stdevb // stdev(cierre, length)
+upper = basis1 + dev
+lower = basis1 - dev
+
+bbr = (cierre - lower)/(upper - lower)
+
+// plot(bbr)
+
+// // MARCA LAS RESISTENCIAS
+pintarojo = 0.0
+pintarojo := nz(pintarojo[1])
+pintarojo := bbr[1] > overbought and bbr < overbought ? alta[1] :  nz(pintarojo[1])
+p = plot(pintarojo, color = red, style=circles, linewidth=2)
+
+// // MARCA LOS SOPORTES
+pintaverde = 0.0
+pintaverde := nz(pintaverde[1])
+pintaverde := bbr[1] < oversold and bbr > oversold ? baja[1] :  nz(pintaverde[1])
+g = plot(pintaverde, color = black, style=circles, linewidth=2)
+zz= crossover(pintaverde,pintaverde[1]) or crossunder(pintaverde,pintaverde[1])
+kp= crossover(pintarojo,pintarojo[1]) or crossunder(pintarojo,pintarojo[1]) 
+//
+wt_src            = hlc3
+wt_channelLen     = input(10,    "Channel Length")
+wt_maLen          = input(3,     "Moving Average Length")
+wt_smoothLen      = input(3,     "Smoothing Average Length")
+wt_overbought     = input(90,    "Overbought Treashold")
+wt_oversold       = input(-90,   "Oversold Treashold")
+wt_showCross      = input(false, title="Cross (On / Off)?")
+wt_showOversold   = input(false,  title="Oversold (On / Off)?")
+wt_showOverbough  = input(false, title="Overbought (On / Off)?")
+wt_usePer         = input(defval = false, title = "Different Time-Period ?")
+wt_res            = input("15", type=resolution, title = "Time-Period")
+
+// ----- WT Calculation
+wt_movingAverage  = ema( wt_src, wt_channelLen )
+wt_movingAverageChannel = ema(abs(wt_src - wt_movingAverage), wt_channelLen)
+wt_channelIndex  = (wt_src - wt_movingAverage) / (0.015 * wt_movingAverageChannel)  // Con-stant 0.015
+
+wt_waveTrend1_t = ema( wt_channelIndex, wt_maLen )
+wt_waveTrend2_t = sma( wt_waveTrend1_t, wt_smoothLen )
+
+wt_waveTrend1 = wt_usePer?security(tickerid, wt_res, wt_waveTrend1_t):wt_waveTrend1_t
+wt_waveTrend2 = wt_usePer?security(tickerid, wt_res, wt_waveTrend2_t):wt_waveTrend2_t
+
+//plot(0, color=gray, title = "Midline")
+//plot(wt_overbought, color=green, title = "Overbought")
+//plot(wt_oversold, color=red, title = "Oversold")
+
+//plot(wt_waveTrend1, color=blue,  transp=50, linewidth = 1 , title = "Wavetrend - Fast")
+//plot(wt_waveTrend2, color=green, transp=50,  linewidth = 3 , title = "Wavetrend - Slow")
+
+bgcolor(wt_showCross?crossover(wt_waveTrend1,wt_waveTrend2)?orange:na:na, transp=50)
+bgcolor(wt_showOverbough?wt_waveTrend2>wt_overbought?red:na:na, transp=80)
+bgcolor(wt_showOversold?wt_waveTrend2<wt_oversold?lime:na:na, transp=80)
+plotshape(zz,  title="buy", style=shape.triangleup,location=location.belowbar, color=green, transp=0, size=size.small)
+plotshape(kp, title="sell", style=shape.triangledown,location=location.abovebar, color=red, transp=0, size=size.small)
+alertcondition(zz, title='buy ', message='go long')
+alertcondition(kp, title='sell', message='go  short')
