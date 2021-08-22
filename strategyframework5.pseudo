@@ -27,6 +27,8 @@ var erning Date
 //
 
 
+// ******* alert if any of securities are corell ******* //
+
 // ======= strategy functions sa,ple ======= //
 // STRATEGy Functions
 f_MACross() =>
