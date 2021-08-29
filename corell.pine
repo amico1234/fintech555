@@ -1,0 +1,49 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ZenAndTheArtOfTrading / www.PineScriptMastery.com
+// This script calculates the covariance and correlation coefficient between two array data sets
+// @version=4
+study("PSMC - Correlation Meter", overlay=false)
+
+// Get user input 
+lookback    = input(title="Lookback", type=input.integer, defval=20) 
+source      = input(title="Source", type=input.source, defval=close)
+reference   = input(title="Reference Market", type=input.string, defval="OANDA:SPX500USD")
+
+// Get % change of reference data source
+referenceData = security(symbol=reference, resolution=timeframe.period, expression=source)
+referenceChange = ((referenceData - referenceData[1]) / referenceData[1]) * 100
+
+// Get % change of current market
+currentData = source
+currentChange = ((currentData - currentData[1]) / currentData[1]) * 100
+
+// Declare arrays
+var referenceArray = array.new_float(lookback)
+var currentArray = array.new_float(lookback)
+
+// Shift (remove) the last (first entered) value from our arrays (FIFO)
+array.shift(referenceArray)
+array.shift(currentArray)
+
+// Add the current values to our arrays
+array.push(referenceArray, referenceChange)
+array.push(currentArray, currentChange)
+
+// Determine & plot our covariance relationship
+covariance = array.covariance(currentArray, referenceArray)
+plot(covariance, color=color.purple, style=plot.style_area, transp=0, title="Covariance")
+
+// Plot our reference data
+plot(referenceChange, color=color.red, style=plot.style_columns, transp=10, title="Reference Market")
+plot(currentChange, color=color.blue, style=plot.style_histogram, linewidth=4, title="Current Market")
+
+// Determine the standard deviation of our arrays
+referenceDev = array.stdev(referenceArray)
+currentDev = array.stdev(currentArray)
+correlation = covariance / (referenceDev * currentDev)
+plot(correlation, color=color.black, linewidth=2, style=plot.style_stepline, title="Correlation Strength")
+
+// Plot reference lines
+//hline(price=1.0)
+//hline(price=-1.0)
+//hline(price=0.0)
