@@ -1,0 +1,204 @@
+//@version=3
+//Based on Rick Santos '[RS]Swing Charts V1 Darvas Box V0.1' 
+//However I have migrated script to pine version 3, customised to suite and added a higher number for the trend count 
+
+study(title='Gann Swings Trend Counter', shorttitle='Trend Counter', overlay=true)
+
+Z                     = input(2, title='ZigZag Filter Length', minval = 1, maxval = 3)
+SHOW_ZIGZAG           = input(title='Show ZigZag',                 defval=false)
+SHOW_NUMBERED_SWINGS  = input(title='Show Numbered Swings',        defval=true)
+SHOW_H_L_LABELS       = input(title='Show HH/HL and LH/LL Labels', defval=true)
+SHOW_Xs               = input(title="Show HH/HL and LH/LL X's",    defval=false)
+SHOW_SWINGCHART       = input(title='Show Swing Support and Resistance Levels', defval=false)
+SHOW_BARCOLOR         = input(title='Overwrite Bar Colors For Bar Type', type=bool, defval=false)
+
+
+// Define Bar types
+
+f_up_bar(_previous_high, _current_high, _previous_low, _current_low)=>
+    _return = _previous_high < _current_high and _previous_low < _current_low
+
+f_down_bar(_previous_high, _current_high, _previous_low, _current_low)=>
+    _return = _previous_high > _current_high and _previous_low > _current_low
+
+f_inside_bar(_previous_high, _current_high, _previous_low, _current_low)=>
+    _return = _previous_high >= _current_high and _previous_low <= _current_low
+
+f_outside_bar(_previous_high, _current_high, _previous_low, _current_low)=>
+    _return = _previous_high <= _current_high and _previous_low >= _current_low
+
+
+//--
+f_swing_high(_previous_high, _current_high, _previous_low, _current_low)=>
+    _condition_00 = f_up_bar(_previous_high[1],      _current_high[1], _previous_low[1], _current_low[1]) and f_down_bar(_previous_high, _current_high, _previous_low, _current_low)
+    _condition_01 = f_outside_bar(_previous_high[1], _current_high[1], _previous_low[1], _current_low[1]) and f_down_bar(_previous_high, _current_high, _previous_low, _current_low)
+    _condition_02 = f_inside_bar(_previous_high[1],  _current_high[1], _previous_low[1], _current_low[1]) and f_down_bar(_previous_high, _current_high, _previous_low, _current_low)
+    _condition_03 = f_up_bar(_previous_high[1],      _current_high[1], _previous_low[1], _current_low[1]) and f_inside_bar(_previous_high, _current_high, _previous_low, _current_low) and close[0] < hl2[1]
+    _condition_04 = f_outside_bar(_previous_high,    _current_high, _previous_low, _current_low) and close < hl2
+    _condition_05 = false
+    _return = _condition_00 or _condition_01 or _condition_02 or _condition_03 or _condition_04 or _condition_05
+
+f_swing_low(_previous_high, _current_high, _previous_low, _current_low)=>
+    _condition_00 = f_down_bar(_previous_high[1],    _current_high[1], _previous_low[1], _current_low[1]) and f_up_bar(_previous_high, _current_high, _previous_low, _current_low)
+    _condition_01 = f_outside_bar(_previous_high[1], _current_high[1], _previous_low[1], _current_low[1]) and f_up_bar(_previous_high, _current_high, _previous_low, _current_low)
+    _condition_02 = f_inside_bar(_previous_high[1],  _current_high[1], _previous_low[1], _current_low[1]) and f_up_bar(_previous_high, _current_high, _previous_low, _current_low)
+    _condition_03 = f_down_bar(_previous_high[1],    _current_high[1], _previous_low[1], _current_low[1]) and f_inside_bar(_previous_high, _current_high, _previous_low, _current_low) and close[0] > hl2[1]
+    _condition_04 = f_outside_bar(_previous_high,    _current_high, _previous_low, _current_low)          and close > hl2
+    _condition_05 = false
+    _return = _condition_00 or _condition_01 or _condition_02 or _condition_03 or _condition_04 or _condition_05
+//--
+f_swingchart(_swings_high, _swings_low)=>
+    _trend  = 0.0
+    _trend  := na(_trend[1]) ? 1 : _trend[1] > 0 and _swings_low ? -1 : _trend[1] < 0 and _swings_high ? 1 : _trend[1]
+    _return = 0.0
+    _return := na(_return[1]) ? 0 : change(_trend) > 0 ? nz(_swings_high, high[1]) : change(_trend) < 0 ? nz(_swings_low, low[1]) : _return[1]
+
+swings_high = f_swing_high(high[Z], high, low[Z], low) ? highest(3) : na
+swings_low  = f_swing_low(high[Z],  high, low[Z], low) ? lowest(3) : na
+
+
+swing_chart  =  f_swingchart(swings_high, swings_low)
+zigzag       =  change(swing_chart) != 0 ? swing_chart : na
+zigzag_trend =  0.0
+zigzag_trend := na(zigzag_trend[1]) ? 1 : change(swing_chart) > 0 ? 1 : change(swing_chart) < 0 ? -1 : zigzag_trend[1]
+
+barcolor(title='Up Bar'         , color=not SHOW_BARCOLOR ? na : f_up_bar(high[1], high, low[1], low)      ? lime : na)
+barcolor(title='Down Bar'       , color=not SHOW_BARCOLOR ? na : f_down_bar(high[1], high, low[1], low)    ? red  : na)
+barcolor(title='Inside Bar'     , color=not SHOW_BARCOLOR ? na : f_inside_bar(high[1], high, low[1], low)  ? blue : na)
+barcolor(title='Outside Bar'    , color=not SHOW_BARCOLOR ? na : f_outside_bar(high[1], high, low[1], low) ? aqua : na)
+
+x = valuewhen(change(swing_chart)!=0, swing_chart, 4)
+a = valuewhen(change(swing_chart)!=0, swing_chart, 3)
+b = valuewhen(change(swing_chart)!=0, swing_chart, 2)
+c = valuewhen(change(swing_chart)!=0, swing_chart, 1)
+d = valuewhen(change(swing_chart)!=0, swing_chart, 0)
+
+
+//  ||---   Trend Counter:
+
+swing_high = zigzag and zigzag >= highest(3) ? true : false
+swing_low  = zigzag and zigzag <= lowest(3)  ? true : false
+
+count_up   = 0.0
+count_up   := na(count_up[1])   ? 0 : swing_high and d > b ? count_up[1] + 1 : swing_low and d > b ? count_up[1] + 1 : swing_high and d <= b ? 0 : swing_low and d <= b ? 0 : count_up[1]
+count_down = 0.0
+count_down := na(count_down[1]) ? 0 : swing_low and d < b ? count_down[1] + 1 : swing_high and d < b ? count_down[1] + 1 : swing_low and d >= b ? 0 : swing_high and d >= b ? 0 : count_down[1]
+
+swing_chart_color = count_up > count_down? green:red
+
+plot(title='Swing Support and Resistance', series=not SHOW_SWINGCHART ? na : swing_chart, color=change(swing_chart) != 0 ? na   : swing_chart_color  , transp=10, linewidth=2, offset=-1)
+plot(title='ZigZag'                      , series=not SHOW_ZIGZAG ?     na : zigzag,      color=zigzag_trend > 0 ?         lime : red, transp=0, linewidth=1, offset=-1)
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+H_L_Color   = SHOW_H_L_LABELS and swing_high and not count_up == 0 and count_up > count_up[1] or SHOW_H_L_LABELS and swing_low and not count_up == 0 and count_up > count_up[1] ? green : SHOW_H_L_LABELS and swing_high and not count_down == 0 and count_down > count_down[1] or SHOW_H_L_LABELS and swing_low  and not count_down == 0 and count_down > count_down[1] ? maroon  : #FFFFFF00
+
+X_Color     = SHOW_Xs         and swing_high and not count_up == 0 and count_up > count_up[1] or SHOW_Xs         and swing_low and not count_up == 0 and count_up > count_up[1] ? #008000a0 : SHOW_Xs       and swing_high and not count_down == 0 and count_down > count_down[1] or SHOW_Xs         and swing_low  and not count_down == 0 and count_down > count_down[1] ? #ff0000a0 : #FFFFFF00
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+plotshape(series=swing_high and not count_up   == 0 and count_up   > count_up[1]   ? true : false, title = 'HH', text='HH', char = 'X',   location=location.abovebar,   color = X_Color, textcolor = H_L_Color, transp=50,  offset=-1) //size=size.tiny, offset=-1)
+plotshape(series=swing_low  and not count_up   == 0 and count_up   > count_up[1]   ? true : false, title = 'HL', text='HL', char = 'X',   location=location.belowbar,   color = X_Color, textcolor = H_L_Color, transp=50,  offset=-1) //size=size.tiny, offset=-1)
+
+plotshape(series=swing_high and not count_down == 0 and count_down > count_down[1] ? true : false, title = 'LH', text='LH', char = 'X',   location=location.abovebar,   color = X_Color, textcolor = H_L_Color, transp=50,  offset=-1) //size=size.tiny, offset=-1)
+plotshape(series=swing_low  and not count_down == 0 and count_down > count_down[1] ? true : false, title = 'LL', text='LL', char = 'X',   location=location.belowbar,   color = X_Color, textcolor = H_L_Color, transp=50,  offset=-1) //size=size.tiny, offset=-1)
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_up == 1 ? true : false, title='', char='1', location=location.abovebar, color=#228B22, transp=0,  offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_up == 2 ? true : false, title='', char='2', location=location.abovebar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_up == 3 ? true : false, title='', char='3', location=location.abovebar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_up == 4 ? true : false, title='', char='4', location=location.abovebar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_up == 5 ? true : false, title='', char='5', location=location.abovebar, color=green, transp=10, offset=-1)
+
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_up == 6 ? true : false, title='', char='6', location=location.abovebar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_up == 7 ? true : false, title='', char='7', location=location.abovebar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_up == 8 ? true : false, title='', char='8', location=location.abovebar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_up == 9 ? true : false, title='', char='9', location=location.abovebar, color=green, transp=10, offset=-1)
+plotshape(series=SHOW_NUMBERED_SWINGS and swing_high and count_up == 10 ? true : false, title = na,text='10', style=shape.labeldown, location=location.abovebar, color=na, textcolor= green, transp=0, offset=-1)
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_up == 1 ? true : false, title='', char='1', location=location.belowbar, color=#228B22,  transp=0, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_up == 2 ? true : false, title='', char='2', location=location.belowbar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_up == 3 ? true : false, title='', char='3', location=location.belowbar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_up == 4 ? true : false, title='', char='4', location=location.belowbar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_up == 5 ? true : false, title='', char='5', location=location.belowbar, color=green, transp=10, offset=-1)
+
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_up == 6 ? true : false, title='', char='6', location=location.belowbar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_up == 7 ? true : false, title='', char='7', location=location.belowbar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_up == 8 ? true : false, title='', char='8', location=location.belowbar, color=green, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_up == 9 ? true : false, title='', char='9', location=location.belowbar, color=green, transp=10, offset=-1)
+plotshape(series=SHOW_NUMBERED_SWINGS and swing_low and count_up == 10 ? true : false, title = na,text='10', style=shape.labelup, location=location.belowbar, color=na, textcolor= green, transp=0, offset=-1)
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_down == 1 ? true : false, title='', char='1', location=location.abovebar, color=red,    transp=0, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_down == 2 ? true : false, title='', char='2', location=location.abovebar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_down == 3 ? true : false, title='', char='3', location=location.abovebar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_down == 4 ? true : false, title='', char='4', location=location.abovebar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_down == 5 ? true : false, title='', char='5', location=location.abovebar, color=maroon, transp=10, offset=-1)
+
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_down == 6 ? true : false, title='', char='6', location=location.abovebar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_down == 7 ? true : false, title='', char='7', location=location.abovebar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_down == 8 ? true : false, title='', char='8', location=location.abovebar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and count_down == 9 ? true : false, title='', char='9', location=location.abovebar, color=maroon, transp=10, offset=-1)
+plotshape(series=SHOW_NUMBERED_SWINGS and swing_high and count_down == 10 ? true : false, title = na,text='10', style=shape.labeldown, location=location.abovebar, color=na, textcolor= maroon, transp=0, offset=-1)
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_down == 1 ? true : false, title='', char='1', location=location.belowbar, color=red,    transp=0, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_down == 2 ? true : false, title='', char='2', location=location.belowbar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_down == 3 ? true : false, title='', char='3', location=location.belowbar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_down == 4 ? true : false, title='', char='4', location=location.belowbar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_down == 5 ? true : false, title='', char='5', location=location.belowbar, color=maroon, transp=10, offset=-1)
+
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_down == 6 ? true : false, title='', char='6', location=location.belowbar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_down == 7 ? true : false, title='', char='7', location=location.belowbar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_down == 8 ? true : false, title='', char='8', location=location.belowbar, color=maroon, transp=10, offset=-1)
+plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and count_down == 9 ? true : false, title='', char='9', location=location.belowbar, color=maroon, transp=10, offset=-1)
+plotshape(series=SHOW_NUMBERED_SWINGS and swing_low and count_down == 10 ? true : false, title = na,text='10', style=shape.labelup, location=location.belowbar, color=na, textcolor= maroon, transp=0, offset=-1)
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and (count_up == 1 or  count_down == 1) ? true : false, title='', char='1', location=location.abovebar, color=CountColor, transp=0,  offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and (count_up == 2 or  count_down == 2) ? true : false, title='', char='2', location=location.abovebar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and (count_up == 3 or  count_down == 3) ? true : false, title='', char='3', location=location.abovebar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and (count_up == 4 or  count_down == 4) ? true : false, title='', char='4', location=location.abovebar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and (count_up == 5 or  count_down == 5) ? true : false, title='', char='5', location=location.abovebar, color=CountColor, transp=10, offset=-1)
+
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and (count_up == 6 or  count_down == 6) ? true : false, title='', char='6', location=location.abovebar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and (count_up == 7 or  count_down == 7) ? true : false, title='', char='7', location=location.abovebar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and (count_up == 8 or  count_down == 8) ? true : false, title='', char='8', location=location.abovebar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_high and (count_up == 9 or  count_down == 9) ? true : false, title='', char='9', location=location.abovebar, color=CountColor, transp=10, offset=-1)
+// plotshape(series=SHOW_NUMBERED_SWINGS and swing_high and (count_up == 10 or  count_down == 10) ? true : false, title = na,text='10', style=shape.labeldown, location=location.abovebar, color=na, textcolor = CountColor, transp=0, offset=-1)
+
+
+// //////////////////////////////////////////////////////////////////////////////////////////
+
+
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and (count_up == 1 or  count_down == 1) ? true : false, title='', char='1', location=location.belowbar, color=CountColor,  transp=0, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and (count_up == 2 or  count_down == 2) ? true : false, title='', char='2', location=location.belowbar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and (count_up == 3 or  count_down == 3) ? true : false, title='', char='3', location=location.belowbar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and (count_up == 4 or  count_down == 4) ? true : false, title='', char='4', location=location.belowbar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and (count_up == 5 or  count_down == 5) ? true : false, title='', char='5', location=location.belowbar, color=CountColor, transp=10, offset=-1)
+
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and (count_up == 6 or  count_down == 6) ? true : false, title='', char='6', location=location.belowbar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and (count_up == 7 or  count_down == 7) ? true : false, title='', char='7', location=location.belowbar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and (count_up == 8 or  count_down == 8) ? true : false, title='', char='8', location=location.belowbar, color=CountColor, transp=10, offset=-1)
+// plotchar(series=SHOW_NUMBERED_SWINGS and swing_low and (count_up == 9 or  count_down == 9) ? true : false, title='', char='9', location=location.belowbar, color=CountColor, transp=10, offset=-1)
+// plotshape(series=SHOW_NUMBERED_SWINGS and swing_low and (count_up == 10 or  count_down == 10) ? true : false, title = na,text='10', style=shape.labelup, location=location.belowbar, color=na, textcolor = CountColor, transp=0, offset=-1)
+
+//////////////////////////////////////////////////////////////////////////////////////////
