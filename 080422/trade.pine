@@ -1,0 +1,275 @@
+
+/// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © amico5
+
+
+// # ========================================================================= #
+// simple test case for alerts.
+// two alerts: long only basic, long only extended
+// backtesting needed.
+// test on sandbox broker needed.
+// test  3 commodities.
+// # ========================================================================= #
+
+
+//@version=4
+
+study("one_indicator_UCS_Stochastic Momentum Index", shorttitle = "oneindicator_UCS_SMI", overlay=false)
+
+// # ========================================================================= #
+// "study" lione should be for all the script. one "study" for all indicators.
+// # ========================================================================= #
+
+
+// # ========================================================================= #
+// 1st indicator
+// # ========================================================================= #
+
+
+// # ========================================================================= #
+// input variables
+// # ========================================================================= #
+
+one_a = input(5, "Percent K Length")
+
+one_b = input(3, "Percent D Length")
+
+// # ========================================================================= #
+// Range Calculation
+// # ========================================================================= #
+
+one_ll = lowest (low, one_a)
+one_hh = highest (high, one_a)
+one_diff = one_hh - one_ll
+one_rdiff = close - (one_hh+one_ll)/2
+
+// # ========================================================================= #
+// Nested Moving Average for smoother curves
+// # ========================================================================= #
+
+one_avgrel = ema(ema(one_rdiff,one_b),one_b)
+one_avgdiff = ema(ema(one_diff,one_b),one_b)
+
+// # ========================================================================= #
+// SMI calculations
+// # ========================================================================= #
+
+one_SMI = one_avgdiff != 0 ? (one_avgrel/(one_avgdiff/2)*100) : 0
+one_SMIsignal = ema(one_SMI,one_b)
+
+// # ========================================================================= #
+// ob, os, zeroline calc
+// # ========================================================================= #
+
+one_ob = 40
+one_os = -40
+one_zeroline = 0
+
+// # ========================================================================= #
+// All PLOTS
+// # ========================================================================= #
+
+plot(one_SMI, title = "Stochastic Momentum Index")
+plot(one_SMIsignal, color = #FF0000 , title = "SMI Signal Line")
+
+one_ob_plot = plot(40, color = #FFCDD2 , title = "one_Over_Bought_plot")
+one_os_plot = plot(-40, color = #008000 , title = "one_Over_Sold_plot")
+one_zeroline_plot = plot(0, color = #0094ff , title = "one_Zero_Line_plot")
+
+// # ========================================================================= #
+// buy, sell Trade Definition
+// # ========================================================================= #
+
+one_Buy = crossover (one_SMI, one_os)
+one_Sell = crossunder(one_SMI, one_ob)
+
+// # ========================================================================= #
+// alerts condition
+// # ========================================================================= #
+
+alertcondition(one_Buy, title="one_Buy Signal", message="one_Buy")
+alertcondition(one_Sell, title="not_one_Sell Signal", message="not_one_Sell")
+
+
+
+
+
+
+
+// 2nd indicator
+
+// study("Overbought Oversold Indicator")
+
+n = input(5, title="Length")
+Barcolor=input(true,title="Barcolor")
+
+ys1 = (high + low + close * 2) / 4
+rk3 = ema(ys1, n)
+rk4 = stdev(ys1, n)
+rk5 = (ys1 - rk3) * 100 / rk4
+rk6 = ema(rk5, n)
+up = ema(rk6, n)
+down = ema(up, n)
+Oo = iff(up < down, up, down)
+Hh = Oo
+Ll = iff(up < down, down, up)
+Cc = Ll
+
+b_color = iff(Oo[1] < Oo and Cc < Cc[1], #FFFF00, iff(up > down, #008000, #FF0000))
+barcolor(Barcolor ? b_color : na)
+
+hline(0)
+plot(Oo, style=plot.style_histogram, color=b_color)
+plot(Ll, style=plot.style_histogram, color=b_color)
+
+plot(up, color=b_color,title="Up")
+plot(down, color=b_color,title="Down")
+
+// the actual definition of the alerts to trade
+Buy = crossover(up, down)
+Sell = crossunder(up, down)
+//
+plotshape(Buy, title="Buy", color=#008000, style=shape.triangleup, location=location.bottom, text="Buy",size=size.tiny)
+plotshape(Sell, title="Sell", color=#FF0000, style=shape.triangledown, location=location.top, text="Sell",size=size.tiny)
+
+alertcondition(Buy, title="Buy Signal", message="Buy")
+alertcondition(Sell, title="Sell Signal", message="Sell")
+
+
+
+// 3rd indicator
+
+// study(title="WaveTrend [LazyBear] copy", shorttitle="WT_LB_copy")
+n1 = input(10, "Channel Length")
+n2 = input(21, "Average Length")
+obLevel1 = input(60, "Over Bought Level 1")
+obLevel2 = input(53, "Over Bought Level 2")
+osLevel1 = input(-60, "Over Sold Level 1")
+osLevel2 = input(-53, "Over Sold Level 2")
+ 
+ap = hlc3 
+esa = ema(ap, n1)
+d = ema(abs(ap - esa), n1)
+ci = (ap - esa) / (0.015 * d)
+tci = ema(ci, n2)
+ 
+wt1 = tci
+wt2 = sma(wt1,4)
+
+plot(0, color=gray)
+p55 = plot(obLevel1, color=red)
+p5 = plot(osLevel1, color=green)
+p555 = plot(obLevel2, color= orange, style=3)
+p7 = plot(osLevel2, color= green, style=3)
+
+shortrig = plot(wt1, color= blue, title="shortrig")
+longsig = plot(wt2, color= white, style=3, title = "longsig")
+p77 = plot(wt1-wt2, color= orange, style=area, transp=80)
+
+
+
+// what is BUY?, SELL ?  ("the actual definition of the alerts to trade")
+
+
+
+
+
+/////////////////////////////////////////////////////////////////
+
+// advanced  trade sample
+
+//MA Distance plots the price's distance from a given MA in percent. It's color coded green (positive) or red (negative).
+
+//MA types are:
+// 1 - simple
+// 2 - exponential
+// 3 - Hull
+// 4 - weighted
+// 5 - volume weighted
+
+study(title = "Distance from MA", shorttitle="MA_dist")
+length = input(50, minval=1, title="Length")
+src = input(close, title="Source")
+matype = input(1, minval=1, maxval=5, title="AvgType")
+
+simplema = sma(src,length)
+exponentialma = ema(src,length)
+hullma = wma(2*wma(src, length/2)-wma(src, length), round(sqrt(length)))
+weightedma = wma(src, length)
+volweightedma = vwma(src, length)
+
+avgval = matype==1 ? simplema : matype==2 ? exponentialma : matype==3 ? hullma : matype==4 ? weightedma : matype==5 ? volweightedma : na
+
+distance=((close/avgval)-1)*100
+
+Pcolor = distance > 0 ? color.green : color.red
+// Pcolor = avgval > avgval[1] ? color.green : color.red
+
+plot(distance,title='Color MA', color=Pcolor, linewidth=4)
+
+
+
+
+// what is BUY?, SELL ?  ("the actual definition of the alerts to trade")
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+study(title="Mirror TSI-MACD by Trader Jay", shorttitle="Mirror_TSI_MACD")
+
+// Getting inputs
+fast_length = input(title="Fast Length", type=input.integer, defval=8)
+slow_length = input(title="Slow Length", type=input.integer, defval=21)
+First_R = input(title="First R", type=input.integer, defval = 8)
+Second_S = input(title="Second S", type=input.integer, defval=5)
+src = input(title="Source", type=input.source, defval=close)
+signal_length = input(title="Signal Smoothing", type=input.integer, minval = 1, maxval = 50, defval = 9)
+sma_signal = input(title="Simple MA(Signal Line)", type=input.bool, defval=false)
+
+
+// Plot colors
+col_grow_above = #26A69A
+col_grow_below = #FFCDD2
+col_fall_above = #B2DFDB
+col_fall_below = #EF5350
+col_macd = #0094ff
+col_signal = #00ff00
+col_mirror_macd = #ff0000
+
+// Calculating
+fast_ma =  ema(src, fast_length)
+slow_ma =  ema(src, slow_length)
+macd = fast_ma - slow_ma
+/////
+
+MTM = macd - macd[1]
+ABSMTM = abs(MTM)
+
+EMA_MTM = ema(MTM, First_R)
+EMA_ABSMTM = ema(ABSMTM, First_R)
+
+EMA2_MTM = ema(EMA_MTM, Second_S)
+EMA2_ABSMTM = ema(EMA_ABSMTM, Second_S)
+
+TSI = 100.0*EMA2_MTM/EMA2_ABSMTM
+Mirror_TSI = -100.0*EMA2_MTM/EMA2_ABSMTM
+
+signal = sma_signal ? sma(TSI, signal_length) : ema(TSI, signal_length)
+
+plotshape(crossover(TSI,Mirror_TSI), color = color.green, style = shape.cross, location = location.top)
+plotshape(crossover(Mirror_TSI,TSI), color = color.red, style = shape.cross, location = location.top)
+
+
+
+hline(0)
+plot(TSI, title="TSI_MACD", color=col_macd, transp=0)
+plot(signal, title="Signal", color=col_signal, transp=0)
+plot(Mirror_TSI, title="TSI_Mirror", color=col_mirror_macd)
+
+
+// what is BUY?, SELL ?  ("the actual definition of the alerts to trade")
