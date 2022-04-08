@@ -9,6 +9,7 @@
 // each sub script will create buy order for or 1/7  of the script $ account. $ 100 each.
 // it needs to be with any of the subscripts trigerred. 
 // watch not to buy multiple times on the sdame subscript.
+// only on $2.5 comission
 // backtesting needed.
 // test on sandbox broker needed.
 // test  3 commodities.
