@@ -6,14 +6,20 @@
 // # ========================================================================= #
 // simple test case for alerts.
 // two alerts: long only basic, long only extended
-// each sub script will create buy order for or 1/7  of the script $ account. $ 100 each.
-// it needs to be with any of the subscripts trigerred. 
-// watch not to buy multiple times on the sdame subscript.
-// only on $2.5 comission
+// further buy, if there is alert on index, fut.
+// all alert cond, must be monitored to  buy.
+// watch not to buy multiple times on the same subscript.
 // backtesting needed.
 // test on sandbox broker needed.
 // test  3 commodities.
 // # ========================================================================= #
+
+
+// # ========================================================================= #
+//  add z-score ?
+// # ========================================================================= #
+
+
 
 
 //@version=4
@@ -35,7 +41,6 @@ study("one_indicator_UCS_Stochastic Momentum Index", shorttitle = "oneindicator_
 // # ========================================================================= #
 
 one_a = input(5, "Percent K Length")
-
 one_b = input(3, "Percent D Length")
 
 // # ========================================================================= #
@@ -84,8 +89,8 @@ one_zeroline_plot = plot(0, color = #0094ff , title = "one_Zero_Line_plot")
 // buy, sell Trade Definition
 // # ========================================================================= #
 
-one_Buy = crossover (one_SMI, one_os)
-one_Sell = crossunder(one_SMI, one_ob)
+one_Buy = crossover (one_SMI, one_os) // greater (only once)
+one_Sell = crossunder(one_SMI, one_ob) // less than (only once)
 
 // # ========================================================================= #
 // alerts condition
