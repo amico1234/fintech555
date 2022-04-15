@@ -4,6 +4,14 @@
 
 
 // # ========================================================================= #
+// # script overview
+// # ========================================================================= #
+
+
+
+
+
+// # ========================================================================= #
 // simple test case for alerts.
 // two alerts: long only basic, long only extended
 // further buy, if there is alert on index, fut.
@@ -109,40 +117,48 @@ alertcondition(one_Sell, title="not_one_Sell Signal", message="not_one_Sell")
 
 // study("Overbought Oversold Indicator")
 
-n = input(5, title="Length")
-Barcolor=input(true,title="Barcolor")
+two_n = input(5, title="Length")
+two_Barcolor=input(true,title="Barcolor")
 
-ys1 = (high + low + close * 2) / 4
-rk3 = ema(ys1, n)
-rk4 = stdev(ys1, n)
-rk5 = (ys1 - rk3) * 100 / rk4
-rk6 = ema(rk5, n)
-up = ema(rk6, n)
-down = ema(up, n)
-Oo = iff(up < down, up, down)
-Hh = Oo
-Ll = iff(up < down, down, up)
-Cc = Ll
+two_ys1 = (high + low + close * 2) / 4
+two_rk3 = ema(two_ys1, two_n)
+two_rk4 = stdev(two_ys1, two_n)
+two_rk5 = (two_ys1 - two_rk3) * 100 / two_rk4
+two_rk6 = ema(two_rk5, two_n)
+two_up = ema(two_rk6, two_n)
+two_down = ema(two_up, two_n)
+two_Oo = iff(two_up < two_down, two_up, two_down)
+two_Hh = two_Oo
+two_Ll = iff(two_up < two_down, two_down, two_up)
+two_Cc = two_Ll
 
-b_color = iff(Oo[1] < Oo and Cc < Cc[1], #FFFF00, iff(up > down, #008000, #FF0000))
-barcolor(Barcolor ? b_color : na)
+two_b_color = iff(two_Oo[1] < two_Oo and two_Cc < two_Cc[1], #FFFF00, iff(two_up > two_down, #008000, #FF0000))
+barcolor(two_Barcolor ? two_b_color : na)
 
 hline(0)
-plot(Oo, style=plot.style_histogram, color=b_color)
-plot(Ll, style=plot.style_histogram, color=b_color)
+plot(two_Oo, style=plot.style_histogram, color=two_b_color)
+plot(two_Ll, style=plot.style_histogram, color=two_b_color)
 
-plot(up, color=b_color,title="Up")
-plot(down, color=b_color,title="Down")
+plot(two_up, color=two_b_color,title="Up")
+plot(two_down, color=two_b_color,title="Down")
 
 // the actual definition of the alerts to trade
-Buy = crossover(up, down)
-Sell = crossunder(up, down)
-//
-plotshape(Buy, title="Buy", color=#008000, style=shape.triangleup, location=location.bottom, text="Buy",size=size.tiny)
-plotshape(Sell, title="Sell", color=#FF0000, style=shape.triangledown, location=location.top, text="Sell",size=size.tiny)
 
-alertcondition(Buy, title="Buy Signal", message="Buy")
-alertcondition(Sell, title="Sell Signal", message="Sell")
+// Buy = crossover(up, down)
+// Sell = crossunder(up, down)
+
+two_Buy = two_up > two_down
+two_Sell = two_up < two_down
+
+
+
+
+//
+plotshape(two_Buy, title="two_Buy", color=#008000, style=shape.triangleup, location=location.bottom, text="Buy",size=size.tiny)
+plotshape(two_Sell, title="two_Sell", color=#FF0000, style=shape.triangledown, location=location.top, text="Sell",size=size.tiny)
+//
+alertcondition(two_Buy, title="two_Buy Signal", message="two_Buy")
+alertcondition(two_Sell, title="two_Sell Signal", message="two_Sell")
 
 
 
