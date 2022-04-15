@@ -19,16 +19,41 @@
 // # ========================================================================= #
 
 
+// # ========================================================================= #
+// # script structure
+// # ========================================================================= #
+
+// # ========================================================================= #
+// 1. version number (should b ver' 4. after tested, will b moved to ver' 5)
+// 2. study / inducator (must have only one for all the script)
+// 3. indicators numbers
+// 4. input variables
+// 5. CALCULATIONS
+// 6. plots Entry
+// 7. trade definition (for the specific indicator)
+// 8. compounding trade definitions (for the indicators, so far)
+// 9. alerts Conditions (for the specific indicator)
+// 10. alerts Conditions (for the comulative, so far)
+// # ========================================================================= #
 
 
+
+
+// # ========================================================================= #
+// # script version
+// # ========================================================================= #
 
 //@version=4
 
-study("one_indicator_UCS_Stochastic Momentum Index", shorttitle = "oneindicator_UCS_SMI", overlay=false)
+// # ========================================================================= #
+// # script study or indicator
+// # ========================================================================= #
 
 // # ========================================================================= #
 // "study" lione should be for all the script. one "study" for all indicators.
 // # ========================================================================= #
+
+study("one_indicator_UCS_Stochastic Momentum Index", shorttitle = "oneindicator_UCS_SMI", overlay=false)
 
 
 // # ========================================================================= #
@@ -204,7 +229,9 @@ p77 = plot(wt1-wt2, color= orange, style=area, transp=80)
 // 4 - weighted
 // 5 - volume weighted
 
-study(title = "Distance from MA", shorttitle="MA_dist")
+// study(title = "Distance from MA", shorttitle="MA_dist")
+
+
 length = input(50, minval=1, title="Length")
 src = input(close, title="Source")
 matype = input(1, minval=1, maxval=5, title="AvgType")
