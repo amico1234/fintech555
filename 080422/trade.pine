@@ -8,14 +8,14 @@
 // # ========================================================================= #
 
 // # ========================================================================= #
-// simple test case for alerts.
-// two alerts: long only basic, long only extended
-// further buy, if there is alert on index, fut.
-// all alert cond, must be monitored to  buy.
-// watch not to buy multiple times on the same subscript.
-// backtesting needed.
-// test on sandbox broker needed.
-// test  3 commodities.
+// 1. simple test case for alerts.
+// 2. two alerts: long only basic, long only extended
+// 3. further buy, if there is alert on index, fut.
+// 4. all alert cond, must be monitored to  buy.
+// 5. watch not to buy multiple times on the same subscript.
+// 6. backtesting needed.
+// 7. test on sandbox broker needed.
+// 8. test  3 commodities.
 // # ========================================================================= #
 
 
