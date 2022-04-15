@@ -16,7 +16,6 @@
 // 6. backtesting needed.
 // 7. test on sandbox broker needed.
 // 8. test  3 commodities.
-// 9. try ONLY on pairs, such as SOIL, 3CFL (because script is only for buy)
 // # ========================================================================= #
 
 
