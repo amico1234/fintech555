@@ -33,7 +33,7 @@
 // 7. trade definition (for the specific indicator)
 // 8. compounding trade definitions (for the indicators, so far)
 // 9. alerts Conditions (for the specific indicator)
-// 10. alerts Conditions (for the comulative, so far)
+// 10. compounding alerts Conditions (for the comulative, so far)
 // # ========================================================================= #
 
 
