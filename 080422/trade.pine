@@ -26,7 +26,7 @@
 // # ========================================================================= #
 // 1. version number (should b ver' 4. after tested, will b moved to ver' 5)
 // 2. study / inducator (must have only one for all the script)
-// 3. indicators numbers
+// 3. indicators numbers, indicator title
 // 4. input variables
 // 5. CALCULATIONS
 // 6. plots Entry
