@@ -1,0 +1,86 @@
+// # ========================================================================= #
+// https://www.tradingview.com/pine-script-docs/en/v5/concepts/Alerts.html#alert-function-events
+
+// https://www.tradingview.com/pine-script-reference/v5/#fun_request{dot}security
+
+// https://www.tradingview.com/blog/en/our-new-alerts-allow-for-dynamic-messages-22588/
+
+
+
+//@version=4
+study("alert() with multiple symbols")
+f_triggerRsi(_ticker)=>
+    _r = rsi(close, 7)
+    _x = crossover(_r,70)
+    _y = crossunder(_r,30)
+    _rt = barstate.isrealtime
+    [_rsi, _co, _cu, _rt_bar] = security(_ticker, timeframe.period, [_r, _x, _y, _rt])
+    _msg = _ticker + ", " + timeframe.period + ": "
+    if _co and _rt_bar
+        _msg := _msg + "RSI (" + tostring(_rsi) + ") crossing up 70 level"
+        alert(_msg,  alert.freq_once_per_bar_close) // *** like this 
+    else if _cu and _rt_bar
+        _msg := _msg + "RSI (" + tostring(_rsi) + ")  crossing down 30 level"
+        alert(_msg,  alert.freq_once_per_bar_close)  // *** like this 
+
+plot(rsi(close, 7), "RSI", color=#8E1599)
+band1 = hline(70, "Upper Band", color=#C0C0C0)
+band0 = hline(30, "Lower Band", color=#C0C0C0)
+fill(band1, band0, color=color.new(#9915FF,90), title="Background")
+
+f_triggerRsi(syminfo.tickerid)
+f_triggerRsi("NASDAQ:MSFT")
+f_triggerRsi("FX:EURUSD")
+f_triggerRsi("NASDAQ:TSLA")
+f_triggerRsi("NASDAQ:PYPL")
+
+
+// # ========================================================================= #
+
+
+//@version=4
+study("alert() with multiple indicators", overlay=true)
+f_triggerSma()=>
+    _s  = sma(close, 14)
+    _co = crossover(close, _s)
+    _cu = crossunder(close, _s)
+    if _co
+        alert("Price (" + tostring(close) + ") crossing up SMA (" + tostring(_s) + ")", alert.freq_once_per_bar)
+    else if _cu
+        alert("Price (" + tostring(close) + ") crossing down SMA (" + tostring(_s) + ")", alert.freq_once_per_bar)
+f_triggerRsi()=>
+    _r  = rsi(close, 7)
+    _co = crossover(_r, 70)
+    _cu = crossunder(_r, 30)
+    if _co
+        alert("RSI (" + tostring(_r) + ") crossing up 70 level", alert.freq_once_per_bar)
+    else if _cu
+        alert("RSI (" + tostring(_r) + ") crossing down 30 level", alert.freq_once_per_bar)
+f_triggerMom()=>
+    _m  = mom(close, 14)
+    _co = crossover(_m, 0)
+    _cu = crossunder(_m, 0)
+    if _co
+        alert("Momentum (" + tostring(_m) + ")  crossing up 0 level", alert.freq_once_per_bar)
+    else if _cu
+        alert("Momentum (" + tostring(_m) + ")  crossing down 0 level", alert.freq_once_per_bar)
+
+plot(sma(close, 14), "SMA")
+f_triggerSma()
+f_triggerRsi()
+f_triggerMom()
+
+
+// # ========================================================================= #
+
+
+// Avoiding repainting with alerts
+
+// The most common instances of repainting traders want to avoid with alerts are ones where they must prevent an alert from triggering at some point during the realtime bar when it would not have triggered at its close. This can happen when these conditions are met:
+
+//     The calculations used in the condition triggering the alert can vary during the realtime bar. This will be the case with any calculation using high, low or close, for example, which includes almost all built-in indicators. It will also be the case with the result of any request.security() call using a higher timeframe than the chart’s, when the higher timeframe’s current bar has not closed yet.
+//     The alert can trigger before the close of the realtime bar, so with any frequency other than “Once Per Bar Close”.
+
+// The simplest way to avoid this type of repainting is to configure the triggering frequency of alerts so they only trigger on the close of the realtime bar. There is no panacea; avoiding this type of repainting always entails waiting for confirmed information, which means the trader must sacrifice immediacy to achieve reliability.
+
+// Note that other types of repainting such as those documented in our Repainting section may not be preventable by simply triggering alerts on the close of realtime bars.
