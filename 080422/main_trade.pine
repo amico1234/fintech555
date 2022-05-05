@@ -1,0 +1,713 @@
+
+/// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © amico5
+
+
+// # ========================================================================= #
+// # script overview
+// # ========================================================================= #
+
+// # ========================================================================= #
+// 1. simple test case for alerts.
+// 2. two alerts: long only basic, long only extended
+// 3. further buy, if there is alert on index, fut.
+// 4. all alert cond, must be monitored to  buy.
+// 5. watch not to buy multiple times on the same subscript.
+// 6. backtesting needed.
+// 7. test on sandbox broker needed.
+// 8. test  3 commodities.
+// # ========================================================================= #
+
+
+// # ========================================================================= #
+// # script structure
+// # ========================================================================= #
+
+// # ========================================================================= #
+// 1. overview
+// 2. structure
+// 3. main script version number (should b ver' 4. after tested, will b moved to ver' 5)
+// 4. main script's: study / inducator (must have only one for all the script)
+// 5. sub indicators numbers
+// 6. sub indicators title
+// 7. input variables
+// 8. CALCULATIONS
+// 9. plots Entry
+// 10. trade definition (for the specific indicator)
+// 11. compounding trade definitions (for the indicators, so far)
+// 12. alerts Conditions (for the specific indicator)
+// 13. compounding alerts Conditions (for the comulative, so far)
+// # ========================================================================= #
+
+
+// # ========================================================================= #
+// # main script version number
+// # ========================================================================= #
+
+//@version=4
+
+// # ========================================================================= #
+// # main script's: study / inducator (must have only one for all the script)
+// # ========================================================================= #
+
+// indicator('one_indicator_UCS_Stochastic Momentum Index', shorttitle='oneindicator_UCS_SMI', overlay=false)
+
+study ('one_indicator_UCS_Stochastic Momentum Index', shorttitle='oneindicator_UCS_SMI', overlay=false)
+
+
+// ---- //
+//      //
+//      //
+// -  - //
+//      //
+//      //
+// ---- //
+
+
+// # ========================================================================= #
+// # sub indicators numbers
+// # ========================================================================= #
+
+// --first indicator-- //
+
+// # ========================================================================= #
+// input variables
+// # ========================================================================= #
+
+one_a = input(5, 'one_Percent K Length')
+one_b = input(3, 'one_Percent D Length')
+
+// # ========================================================================= #
+// Range Calculation
+// # ========================================================================= #
+
+one_ll = lowest(low, one_a)
+one_hh = highest(high, one_a)
+one_diff = one_hh - one_ll
+one_rdiff = close - (one_hh + one_ll) / 2
+
+// # ========================================================================= #
+// Nested Moving Average for smoother curves
+// # ========================================================================= #
+
+one_avgrel = ema(ema(one_rdiff, one_b), one_b)
+one_avgdiff = ema(ema(one_diff, one_b), one_b)
+
+
+// # ========================================================================= #
+// SMI calculations
+// # ========================================================================= #
+
+one_SMI = one_avgdiff != 0 ? one_avgrel / (one_avgdiff / 2) * 100 : 0
+one_SMIsignal = ema(one_SMI, one_b)
+
+// # ========================================================================= #
+// ob, os, zeroline calc
+// # ========================================================================= #
+
+one_ob = 40
+one_os = -40
+one_zeroline = 0
+
+// # ========================================================================= #
+// All PLOTS
+// # ========================================================================= #
+
+plot(one_SMI, title='one_Stochastic Momentum Index')
+plot(one_SMIsignal, color=color.new(#FF0000, 0), title='one_SMI Signal Line')
+
+one_ob_plot = plot(40, color=color.new(#FFCDD2, 0), title='one_Over_Bought_plot')
+one_os_plot = plot(-40, color=color.new(#008000, 0), title='one_Over_Sold_plot')
+one_zeroline_plot = plot(0, color=color.new(#0094ff, 0), title='one_Zero_Line_plot')
+
+// # ========================================================================= #
+// trade definition (for the specific indicator)
+// # ========================================================================= #
+
+
+one_Buy_5 = one_SMI > one_os 
+one_Sell_5 = one_SMI < one_ob 
+
+one_Buy_7_maybe = one_SMI > one_SMIsignal
+one_Sell_7_maybe = one_SMI < one_SMIsignal
+
+one_SMI_stat_less_zero = one_SMI < one_zeroline // buy
+one_SMI_stat_above_zero = one_SMI > one_zeroline // sell
+
+// # ========================================================================= #
+// compounding trade definitions (for the indicators, so far)
+// # ========================================================================= #
+
+one_compoundAlertBuyExtraZero = one_Buy_5 and one_Buy_7_maybe and one_SMI_stat_less_zero
+one_compoundAlertSellExtraZero = one_Sell_5 and one_Sell_7_maybe and one_SMI_stat_above_zero
+
+// test
+
+one_testAlertBuy7 = one_Buy_7_maybe
+// 
+
+one_compoundAlertBuy = one_Buy_5 and one_Buy_7_maybe
+
+
+
+// # ========================================================================= #
+// alerts Conditions (for the specific indicator)
+// # ========================================================================= #
+
+
+// # ========================================================================= #
+// compound alerts condition
+// # ========================================================================= #
+
+alertcondition (one_compoundAlertBuyExtraZero, title= "one_compoundAlertBuyExtraZero", message ="one_compoundAlertBuyExtraZero")
+alertcondition (one_compoundAlertSellExtraZero, title= "one_compoundAlertSellExtraZero", message ="one_compoundAlertSellExtraZero")
+
+
+// test
+//one_testAlertBuy7
+
+alertcondition (one_testAlertBuy7, title= "one_testAlertBuy7", message ="one_testAlertBuy7")
+
+// test
+alertcondition (one_compoundAlertBuy, title= "one_compoundAlertBuy", message ="one_compoundAlertBuy")
+//
+
+
+// ---- //
+//      //
+//      //
+// -  - //
+//      //
+//      //
+// ---- //
+
+
+// # ========================================================================= #
+// # sub indicator number
+// # ========================================================================= #
+
+// --second indicator-- //
+
+// # ========================================================================= #
+// # indicator title
+// # ========================================================================= #
+
+// Overbought oversold
+
+// # ========================================================================= #
+// input variables
+// # ========================================================================= #
+
+two_n = input(5, title="two_Length")
+two_Barcolor=input(true,title="two_Barcolor")
+two_ys1 = (high + low + close * 2) / 4
+two_rk3 = ema(two_ys1, two_n)
+two_rk4 = stdev(two_ys1, two_n)
+two_rk5 = (two_ys1 - two_rk3) * 100 / two_rk4
+two_rk6 = ema(two_rk5, two_n)
+two_up = ema(two_rk6, two_n)
+two_down = ema(two_up, two_n)
+two_Oo = iff(two_up < two_down, two_up, two_down)
+two_Hh = two_Oo
+two_Ll = iff(two_up < two_down, two_down, two_up)
+two_Cc = two_Ll
+
+// # ========================================================================= #
+// PLOTS
+// # ========================================================================= #
+
+two_b_color = iff(two_Oo[1] < two_Oo and two_Cc < two_Cc[1], #FFFF00, iff(two_up > two_down, #008000, #FF0000))
+barcolor(two_Barcolor ? two_b_color : na)
+
+hline(0)
+plot(two_Oo, style=plot.style_histogram, color=two_b_color)
+plot(two_Ll, style=plot.style_histogram, color=two_b_color)
+
+plot(two_up, color=two_b_color,title="two_Up")
+plot(two_down, color=two_b_color,title="two_Down")
+
+// # ========================================================================= #
+// trade definition (for the specific indicator)
+// # ========================================================================= #
+
+two_Buy = two_up > two_down
+two_Sell = two_up < two_down
+
+// # ========================================================================= #
+// Compound Trade Definition (for the specific indicator)
+// # ========================================================================= #
+
+two_compoundAlertBuy = one_Buy_5 and one_Buy_7_maybe and one_SMI_stat_less_zero and two_Buy
+two_compoundAlertSell = one_Sell_5 and one_Sell_7_maybe and one_SMI_stat_above_zero and two_Sell
+
+// # ========================================================================= #
+// plot alerts
+// # ========================================================================= #
+
+plotshape(two_Buy, title="two_Buy", color=#008000, style=shape.triangleup, location=location.bottom, text="two_Buy",size=size.tiny)
+plotshape(two_Sell, title="two_Sell", color=#FF0000, style=shape.triangledown, location=location.top, text="two_Sell",size=size.tiny)
+
+// # ========================================================================= #
+// alerts condition
+// # ========================================================================= #
+
+// # ========================================================================= #
+// compound alerts condition
+// # ========================================================================= #
+
+alertcondition (two_compoundAlertBuy, title= "two_compoundAlertBuy", message ="two_ocompoundAlertBuy")
+alertcondition (two_compoundAlertSell, title= "two_compoundAlertSell", message ="wo_compoundAlertSell")
+
+
+// ---- //
+//      //
+//      //
+// -  - //
+//      //
+//      //
+// ---- //
+
+
+// # ========================================================================= #
+// # sub indicator number
+// # ========================================================================= #
+
+// --third indicator-- //
+
+// # ========================================================================= #
+// # indicator title
+// # ========================================================================= #
+
+// wt_lb
+
+// # ========================================================================= #
+// input variables
+// # ========================================================================= #
+
+three_n1 = input(10, "three_Channel Length")
+three_n2 = input(21, "three_Average Length")
+three_obLevel1 = input(60, "three_Over Bought Level 1")
+three_obLevel2 = input(53, "three_Over Bought Level 2")
+three_osLevel1 = input(-60, "three_Over Sold Level 1")
+three_osLevel2 = input(-53, "three_Over Sold Level 2")
+
+
+// # ========================================================================= #
+// Calculation
+// # ========================================================================= #
+ 
+three_ap = hlc3 
+three_esa = ema(three_ap, three_n1)
+three_d = ema(abs(three_ap - three_esa), three_n1)
+three_ci = (three_ap - three_esa) / (0.015 * three_d)
+three_tci = ema(three_ci, three_n2)
+ 
+three_wt1 = three_tci
+three_wt2 = sma(three_wt1,4)
+
+// # ========================================================================= #
+// PLOTS
+// # ========================================================================= #
+
+plot(0, color=#7b8da6)
+three_p55 = plot(three_obLevel1, color=#ff2c55)
+three_p5 = plot(three_osLevel1, color=#99cc33)
+three_p555 = plot(three_obLevel2, color=#f49f0a, style=3)
+three_p7 = plot(three_osLevel2, color= #ba9588, style=3)
+
+three_shortrig = plot(three_wt1, color=#6b5d52, title="three_shortrig")
+three_longsig = plot(three_wt2, color= #f5cff2, style=3, title = "three_longsig")
+three_p77 = plot(three_wt1-three_wt2, color= #ffd680, style= 3, transp=80)
+
+
+// # ========================================================================= #
+// trade definition (for the specific indicator)
+// # ========================================================================= #
+
+three_Buy = three_wt1 > three_wt2
+three_Sell = three_wt1 < three_wt2
+
+// # ========================================================================= #
+// Compound Trade Definition
+// # ========================================================================= #
+
+three_compoundAlertBuy = one_Buy_5 and one_Buy_7_maybe and one_SMI_stat_less_zero and two_Buy and three_Buy
+three_compoundAlertSell = one_Sell_5 and one_Sell_7_maybe and one_SMI_stat_above_zero and two_Sell and three_Sell
+
+// # ========================================================================= #
+// compound alerts condition
+// # ========================================================================= #
+
+alertcondition (three_compoundAlertBuy, title= "three_compoundAlertBuy", message ="three_ocompoundAlertBuy")
+
+
+// ---- //
+//      //
+//      //
+// -  - //
+//      //
+//      //
+// ---- //
+
+
+// # ========================================================================= #
+// # sub indicator number
+// # ========================================================================= #
+
+// --forth indicator-- //
+
+// # ========================================================================= #
+// # indicator title
+// # ========================================================================= #
+
+// tsimacd
+
+// # ========================================================================= #
+// input variables
+// # ========================================================================= #
+
+four_fast_length = input(title="four_Fast Length", type=input.integer, defval=8)
+four_slow_length = input(title="four_Slow Length", type=input.integer, defval=21)
+four_First_R = input(title="four_First R", type=input.integer, defval = 8)
+four_Second_S = input(title="four_Second S", type=input.integer, defval=5)
+four_src = input(title="four_Source", type=input.source, defval=close)
+four_signal_length = input(title="four_Signal Smoothing", type=input.integer, minval = 1, maxval = 50, defval = 9)
+four_sma_signal = input(title="four_Simple MA(Signal Line)", type=input.bool, defval=false)
+
+// # ========================================================================= #
+// PLOT colors
+// # ========================================================================= #
+
+four_col_grow_above = #26A69A
+four_col_grow_below = #FFCDD2
+four_col_fall_above = #B2DFDB
+four_col_fall_below = #EF5350
+four_col_macd = #0094ff
+four_col_signal = #00ff00
+four_col_mirror_macd = #ff0000
+
+// # ========================================================================= #
+// calculations
+// # ========================================================================= #
+
+four_fast_ma =  ema(four_src, four_fast_length)
+four_slow_ma =  ema(four_src, four_slow_length)
+four_macd = four_fast_ma - four_slow_ma
+
+four_MTM = four_macd - four_macd[1]
+four_ABSMTM = abs(four_MTM)
+
+four_EMA_MTM = ema(four_MTM, four_First_R)
+four_EMA_ABSMTM = ema(four_ABSMTM, four_First_R)
+
+four_EMA2_MTM = ema(four_EMA_MTM, four_Second_S)
+four_EMA2_ABSMTM = ema(four_EMA_ABSMTM, four_Second_S)
+
+four_TSI = 100.0*four_EMA2_MTM/four_EMA2_ABSMTM
+four_Mirror_TSI = -100.0*four_EMA2_MTM/four_EMA2_ABSMTM
+
+four_signal = four_sma_signal ? sma(four_TSI, four_signal_length) : ema(four_TSI, four_signal_length)
+
+// # ========================================================================= #
+// PLOT alerts
+// # ========================================================================= #
+
+plotshape(crossover(four_TSI,four_Mirror_TSI), color = color.green, style = shape.cross, location = location.top)
+plotshape(crossover(four_Mirror_TSI,four_TSI), color = color.red, style = shape.cross, location = location.top)
+
+hline(0)
+plot(four_TSI, title="four_TSI_MACD", color=four_col_macd, transp=0)
+plot(four_signal, title="four_Signal", color=four_col_signal, transp=0)
+plot(four_Mirror_TSI, title="four_TSI_Mirror", color=four_col_mirror_macd)
+
+four_zeroline = 0 // for trade definition and alert
+
+// # ========================================================================= #
+// trade definition (for the specific indicator)
+// # ========================================================================= #
+
+// tsi > mirorrtsi - TBD
+
+// four_Buy = (four_TSI > four_signal) and (four_TSI < 0) and (four_signal < 0 )
+// four_Sell = (four_TSI < four_signal) and (four_TSI > 0) and (four_signal > 0 )
+
+four_Buy = (four_TSI > four_signal) and (four_TSI < four_zeroline) and (four_signal < four_zeroline )
+four_Sell = (four_TSI < four_signal) and (four_TSI > four_zeroline) and (four_signal > four_zeroline )
+
+// # ========================================================================= #
+// Compound Trade Definition
+// # ========================================================================= #
+
+four_compoundAlertBuy = one_Buy_5 and one_Buy_7_maybe and one_SMI_stat_less_zero and two_Buy and three_Buy and four_Buy
+four_compoundAlertSell = one_Sell_5 and one_Sell_7_maybe and one_SMI_stat_above_zero and two_Sell and three_Sell and four_Sell
+
+// # ========================================================================= #
+// compound alerts condition
+// # ========================================================================= #
+
+alertcondition (four_compoundAlertBuy, title= "four_compoundAlertBuy", message ="four_compoundAlertBuy")
+
+
+// ---- //
+//      //
+//      //
+// -  - //
+//      //
+//      //
+// ---- //
+
+
+// # ========================================================================= #
+// # sub indicator number
+// # ========================================================================= #
+
+// --thith indicator-- //
+
+// # ========================================================================= #
+// # indicator title
+// # ========================================================================= #
+
+// zscore
+
+// # ========================================================================= #
+// input variables
+// # ========================================================================= #
+
+five_Period = input(20, minval=1)
+hline(0, color=#d575b6)
+five_xStdDev = stdev(close, five_Period)
+five_xMA = sma(close, five_Period)
+five_nRes = (close - five_xMA) / five_xStdDev
+
+thith_zeroline = 0 // for trade definitions alerts
+
+// # ========================================================================= #
+// plot
+// # ========================================================================= #
+
+plot(five_nRes, color=#f2e2ce, title="five_Z-Score")
+
+// # ========================================================================= #
+// trade definition (for the specific indicator)
+// # ========================================================================= #
+
+
+thith_buy = five_nRes > thith_zeroline
+thith_sell = five_nRes < thith_zeroline
+
+
+// # ========================================================================= #
+// Compound Trade Definition
+// # ========================================================================= #
+
+thith_compoundAlertBuy = one_Buy_5 and one_Buy_7_maybe and one_SMI_stat_less_zero and two_Buy and three_Buy and four_Buy and thith_buy
+thith_compoundAlertSell = one_Sell_5 and one_Sell_7_maybe and one_SMI_stat_above_zero and two_Sell and three_Sell and four_Sell and thith_sell
+
+// # ========================================================================= #
+// compound alerts condition
+// # ========================================================================= #
+
+alertcondition (thith_compoundAlertBuy, title= "thith_compoundAlertBuy", message ="thith_compoundAlertBuy")
+
+
+// ---- //
+//      //
+//      //
+// -  - //
+//      //
+//      //
+// ---- //
+
+
+
+//////////////
+
+
+// 6th indicator
+
+// argotic tsi
+
+
+// r - Length of first EMA smoothing of 1 day momentum        4
+// s - Length of second EMA smoothing of 1 day smoothing      8    
+// u- Length of third EMA smoothing of 1 day momentum         6  
+// Length of EMA signal line                                  3
+// Source of Ergotic TSI                                      Close
+//
+// This is one of the techniques described by William Blau in his book "Momentum,
+// Direction and Divergence" (1995). If you like to learn more, we advise you to 
+// read this book. His book focuses on three key aspects of trading: momentum, 
+// direction and divergence. Blau, who was an electrical engineer before becoming 
+// a trader, thoroughly examines the relationship between price and momentum in 
+// step-by-step examples. From this grounding, he then looks at the deficiencies 
+// in other oscillators and introduces some innovative techniques, including a 
+// fresh twist on Stochastics. On directional issues, he analyzes the intricacies 
+// of ADX and offers a unique approach to help define trending and non-trending periods. 
+// You can use in the xPrice any series: Open, High, Low, Close, HL2, HLC3, OHLC4 and ect...
+////////////////////////////////////////////////////////////
+//study(title="Ergotic TSI Strategy")
+
+
+
+
+// r = input(4, minval=1)
+// s = input(8, minval=1)
+// u = input(6, minval=1)
+// SmthLen = input(3, minval=1)
+// hline(0, color=blue, linestyle=line)
+// xPrice = close
+// xPrice1 = xPrice - xPrice[1]
+// xPrice2 = abs(xPrice - xPrice[1])
+// xSMA_R = ema(ema(ema(xPrice1,r), s),u)
+// xSMA_aR = ema(ema(ema(xPrice2, r), s),u)
+// Val1 = 100 * xSMA_R
+// Val2 = xSMA_aR
+// xTSI = iff (Val2 != 0, Val1 / Val2, 0)
+// xEMA_TSI = ema(xTSI, SmthLen)
+// pos =	iff(xTSI > xEMA_TSI, 1,
+// 	    iff(xTSI < xEMA_TSI, -1, nz(pos[1], 0))) 
+// barcolor(pos == -1 ? red: pos == 1 ? green : blue )
+// plot(xTSI, color=green, title="Ergotic TSI")
+// plot(xEMA_TSI, color=red, title="SigLin")
+
+
+
+// // 7th indicator
+
+// // lrs
+
+// // Simple linear regression slope - Good way see if the trend is accelarating or decelarating
+
+// // study(title="UCSGEARS - Linear Regression Slope", shorttitle="UCS-LRS", overlay=false)
+
+// src = close
+// //Input
+// clen = input (defval = 50, minval = 1, title = "Curve Length")
+// slen = input(defval=5, minval=1, title="Slope Length")
+// glen = input(defval=13, minval=1, title="Signal Length")
+
+// //Linear Regression Curve
+// lrc = linreg(src, clen, 0)
+// //Linear Regression Slope
+// lrs = (lrc-lrc[1])/1
+// //Smooth Linear Regression Slope
+// slrs = ema(lrs, slen)
+// //Signal Linear Regression Slope
+// alrs = sma(slrs, glen)
+// //loalrs = sma(slrs, (glen*5))
+
+// uacce = lrs > alrs and lrs > 0 
+// dacce = lrs < alrs and lrs < 0 
+
+// scolor = uacce ? green : dacce ? red : blue
+
+// plot(0, title = "Zero Line", color = gray)
+// plot(slrs, color = scolor, title = "Linear Regression Slope", style = histogram, linewidth = 4)
+// plot(alrs, color = gray, title = "Average Slope")
+
+
+///////////////////////////////////////////////
+
+// ---- only for bull --- //
+
+// //@version=4
+// study(title="Parabolic SAR Alerts (on close) [QuantNomad]", shorttitle="SAR Alerts [QN]", overlay=true)
+
+// start     = input(0.02)
+// increment = input(0.02)
+// maximum   = input(0.2)
+
+// psar      = 0.0 // PSAR
+// af        = 0.0 // Acceleration Factor
+// trend_dir = 0   // Current direction of PSAR
+// ep        = 0.0 // Extreme point
+
+// sar_long_to_short = trend_dir[1] == 1  and close <= psar[1] // PSAR switches from long to short
+// sar_short_to_long = trend_dir[1] == -1 and close >= psar[1] // PSAR switches from short to long
+
+// trend_change = barstate.isfirst[1] or sar_long_to_short or sar_short_to_long
+
+// // Calculate trend direction
+// trend_dir    := barstate.isfirst[1] and close[1] > open[1] ? 1 : 
+//   barstate.isfirst[1] and close[1] <= open[1] ? -1 : 
+//   sar_long_to_short ? -1 : 
+//   sar_short_to_long ?  1 : nz(trend_dir[1])
+
+// // Calculate  Acceleration Factor
+// af := trend_change ? start : 
+//   (trend_dir == 1 and high > ep[1]) or  
+//   (trend_dir == -1 and low < ep[1]) ? 
+//   min(maximum, af[1] + increment) : 
+//   af[1]
+
+// // Calculate extreme point
+// ep := trend_change and trend_dir == 1 ? high :  
+//   trend_change and trend_dir == -1 ? low : 
+//   trend_dir == 1 ? max(ep[1], high) : 
+//   min(ep[1], low)
+
+// // Calculate PSAR
+// psar := barstate.isfirst[1] and close[1] > open[1] ? low[1] : 
+//   barstate.isfirst[1] and close[1] <= open[1] ? high[1] : 
+//   trend_change ? ep[1] :    
+//   trend_dir == 1 ? psar[1] + af * (ep - psar[1]) : psar[1] - af * (psar[1] - ep) 
+
+// plot(psar, style=plot.style_cross, color=trend_dir == 1 ? color.green : color.red,  linewidth = 2)
+
+// plotshape(sar_short_to_long, style = shape.arrowup,   color = color.green, location = location.abovebar, text = "PSAR\nLong")
+// plotshape(sar_long_to_short, style = shape.arrowdown, color = color.red,   location = location.belowbar, text = "PSAR\Short")
+
+// // Alerts 
+// alertcondition(sar_short_to_long, "PSAR Long",  "PSAR Long")
+// alertcondition(sar_long_to_short, "PSAR Short", "PSAR Short")
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+// ---- only for bull --- //
+
+
+// //@version=4
+// // Copyright (c) 2019-present, Alex Orekhov (everget)
+// // Parabolic SAR script may be freely distributed under the terms of the GPL-3.0 license.
+// study("Parabolic SAR", shorttitle="PSAR", overlay=true)
+
+// start = input(title="Start", type=input.float, step=0.001, defval=0.02)
+// increment = input(title="Increment", type=input.float, step=0.001, defval=0.02)
+// maximum = input(title="Maximum", type=input.float, step=0.01, defval=0.2)
+// width = input(title="Point Width", type=input.integer, minval=1, defval=2)
+// highlightStartPoints = input(title="Highlight Start Points ?", type=input.bool, defval=true)
+// showLabels = input(title="Show Buy/Sell Labels ?", type=input.bool, defval=true)
+// highlightState = input(title="Highlight State ?", type=input.bool, defval=true)
+
+// psar = sar(start, increment, maximum)
+// dir = psar < close ? 1 : -1
+
+// psarColor = dir == 1 ? #3388bb : #fdcc02
+// psarPlot = plot(psar, title="PSAR", style=plot.style_circles, linewidth=width, color=psarColor, transp=0)
+
+// var color longColor = color.green
+// var color shortColor = color.red
+
+// buySignal = dir == 1 and dir[1] == -1
+// plotshape(buySignal and highlightStartPoints ? psar : na, title="Long Start", location=location.absolute, style=shape.circle, size=size.tiny, color=longColor, transp=0)
+// plotshape(buySignal and showLabels ? psar : na, title="Buy Label", text="Buy", location=location.absolute, style=shape.labelup, size=size.tiny, color=longColor, textcolor=color.white, transp=0)
+
+// sellSignal = dir == -1 and dir[1] == 1
+// plotshape(sellSignal and highlightStartPoints ? psar : na, title="Short Start", location=location.absolute, style=shape.circle, size=size.tiny, color=shortColor, transp=0)
+// plotshape(sellSignal and showLabels ? psar : na, title="Sell Label", text="Sell", location=location.absolute, style=shape.labeldown, size=size.tiny, color=shortColor, textcolor=color.white, transp=0)
+
+// midPricePlot = plot(ohlc4, title="", display=display.none)
+
+// fillColor = highlightState ? (dir == 1 ? longColor : shortColor) : na
+// fill(midPricePlot, psarPlot, title="Trade State Filling", color=fillColor)
+
+// changeCond = dir != dir[1]
+// alertcondition(changeCond, title="Alert: PSAR Direction Change", message="PSAR has changed direction!")
+// alertcondition(buySignal, title="Alert: PSAR Long", message="PSAR Long")
+// alertcondition(sellSignal, title="Alert: PSAR Short", message="PSAR Sell")
+
+
+
+
