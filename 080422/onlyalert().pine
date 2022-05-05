@@ -5,8 +5,475 @@
 
 // https://www.tradingview.com/blog/en/our-new-alerts-allow-for-dynamic-messages-22588/
 
+// # ========================================================================= #
+// *   > 1.  simple RSI - over
+// *   > 2.  simple RSI - ">"
+// *   > 3.  multi any - over
+// *   > 4.  multi every - over
+// *   > 5.  multi any - ">"
+// *   > 6.  multi every - ">"
+// *   > 7.  RSI center line 50
+// *   > 8.  sar , ucslrs
+// *   > 9.  daily 
+// # ========================================================================= #
+
+/// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © amico5
 
 
+// # ========================================================================= #
+// # script overview
+// # ========================================================================= #
+
+// # ========================================================================= #
+// 1. simple test case for alerts(), NOT alertcondition().
+// 2. bull and bear
+// # ========================================================================= #
+
+
+// # ========================================================================= #
+// # script structure
+// # ========================================================================= #
+
+// # ========================================================================= #
+// 1. overview
+// 2. structure
+// 3. main script version number (should b ver' 4. after tested, will b moved to ver' 5)
+// 4. main script's: study / inducator (must have only one for all the script)
+// 5. sub indicators numbers
+// 6. sub indicators title
+// 7. input variables
+// 8. CALCULATIONS
+// 9. plots Entry
+// 10. trade definition (for the specific indicator)
+// 11. compounding trade definitions (for the indicators, so far)
+// 12. alerts (for the specific indicator)
+// 13. compounding alerts (for the comulative, so far)
+// # ========================================================================= #
+
+
+// # ========================================================================= #
+// https://www.tradingview.com/pine-script-docs/en/v5/concepts/Alerts.html#alert-function-events
+
+// https://www.tradingview.com/pine-script-reference/v5/#fun_request{dot}security
+
+// https://www.tradingview.com/blog/en/our-new-alerts-allow-for-dynamic-messages-22588/
+
+// # ========================================================================= #
+// *   > 1.  simple RSI - over
+// *   > 2.  simple RSI - ">"
+// *   > 3.  multi any - over
+// *   > 4.  multi every - over
+// *   > 5.  multi any - ">"
+// *   > 6.  multi every - ">"
+// *   > 7.  RSI center line 50
+// *   > 8.  sar , ucslrs
+// *   > 9.  daily 
+
+
+
+
+
+// # ========================================================================= #
+// # main script version number
+// # ========================================================================= #
+
+//@version=4
+
+// # ========================================================================= #
+// # main script's: study / inducator (must have only one for all the script)
+// # ========================================================================= #
+
+
+
+// alert must be deleted and than new alert with securities 
+
+
+study("Ami_Trade_alert() with multiple symbols" , shorttitle='Ami_Trade_alert() with multiple symbols', overlay=false)
+f_triggerRsi(_ticker)=>
+    _r = rsi(close, 7)
+   // _x = crossover(_r,70)
+    _x = crossover(_r,50) or crossover(_r,70) or crossover(_r,30)
+    // _x = (_r > 70)
+    // _x = (_r > 50)
+    _y = crossunder(_r,28.88) or crossunder(_r,30) or crossunder(_r,28) or crossunder(_r,50)
+    // _y = (_r < 30)
+
+
+// # ========================================================================= #
+// # trying comulative
+// # ========================================================================= #
+
+
+    // mom_m  = mom(close, 14)
+    // mom_co = mom_m > 0
+    // mom_cu = mom_m < 0
+
+    _q = mom(close, 14)
+    _w = _q > 0
+    _o = _q < 0
+
+///
+
+// Period = input(20, minval=1)
+// hline(0, color=purple, linestyle=line)
+// xStdDev = stdev(close, Period)
+// xMA = sma(close, Period)
+// nRes = (close - xMA) / xStdDev
+// plot(nRes, color=blue, title="Z-Score")
+
+    _p = 20
+    _t = stdev(close, _p) // xStdDev
+    _l = sma(close, _p) // xMA
+    _n = (close - _l) / _t    // nRes //zscore
+    _zc = _n > 0
+    _zcs = _n < 0
+/////////////////
+
+
+
+    _rt = barstate.isrealtime
+    //
+    
+    
+    // [_rsi, _co, _cu, _rt_bar] = security(_ticker, timeframe.period, [_r, _x, _y, _rt])
+   
+   // with momentum
+   
+    [_rsi, _co, _cu, _mom, _mom_co, _mon_cu, _z_per, _z_std, _z_sma, _z_nres_zscore, _z_zscore, _z_zscore_bear, _rt_bar] = security(_ticker, timeframe.period, [_r, _x, _y, _q, _w, _o, _p, _t, _l, _n, _zc, _zcs, _rt])
+   
+   //
+   
+    _msg = _ticker + ", " + timeframe.period + ": "
+   
+ 
+    if _co and _mom_co and _z_zscore and _rt_bar
+        _msg := _msg + "RSI_comulative (" + tostring(_rsi) + tostring(_mom) + tostring(_z_nres_zscore) + ") crossing up 50 level and comulative"
+        //alert(_msg,  alert.freq_once_per_bar_close) // *** like this
+        alert(_msg,  alert.freq_once_per_bar_close) // *** like this 
+            
+    else if _cu and _mon_cu and  _z_zscore_bear and _rt_bar
+        _msg := _msg + "RSI_comulative (" + tostring(_rsi) + tostring(_mom) + tostring(_z_nres_zscore) + ")  crossing down 50 level and comulative"
+        //alert(_msg,  alert.freq_once_per_bar_close)  // *** like this 
+       // alert(_msg,  alert.freq_once_per_bar_close)  // *** like this 
+        alert(_msg,  alert.freq_once_per_bar)
+
+//
+plot(rsi(close, 7), "RSI", color=#8E1599)
+band1 = hline(70, "Upper Band", color=#C0C0C0)
+band0 = hline(30, "Lower Band", color=#C0C0C0)
+fill(band1, band0, color=color.new(#9915FF,90), title="Background")
+
+
+
+
+f_triggerRsi(syminfo.tickerid)
+
+// MKT bull
+// MKT bear
+// f_triggerRsi("AMEX:UVIX")
+
+// // gold phy
+// f_triggerRsi("AMEX:AAAU")
+// // gold options
+// f_triggerRsi("LSE:3GOL")
+// // gold miners
+// f_triggerRsi("AMEX:NUGT")
+// // gold div
+// f_triggerRsi("NASDAQ:GLDI")
+// // gold short
+// f_triggerRsi("AMEX:DUST")
+// f_triggerRsi("LSE:3GOS")
+
+// // silver phy
+// // silver options
+// f_triggerRsi("LSE:3SIL")
+// // silver miners
+// // silver div
+// f_triggerRsi("NASDAQ:SLVO")
+// // silver short
+// f_triggerRsi("LSE:3SIS")
+
+// // oil phy
+// // oil options
+// f_triggerRsi("LSE:3OIL")
+// // oil miners
+// // oil div
+// // oil short
+// f_triggerRsi("LSE:3OIS")
+// f_triggerRsi("AMEX:SCO")
+// // nlg phy
+// // nlg options
+// f_triggerRsi("LSE:3NGL")
+// // nlg miners
+// // nlg div
+// // nlg short
+// f_triggerRsi("LSE:3NGS")
+
+// // URANIUM phy
+// // URANIUM options
+// // URANIUM miners
+// // URANIUM div
+// // URANIUM short
+
+
+// // MOLYBDENUM
+
+// // lumber
+
+// // MAGNESIUM
+
+// // TITANIUM
+
+// // RHODIUM
+
+// // pal phy
+// f_triggerRsi("LSE:PHPD")
+// // pal options
+// f_triggerRsi("LSE:2PAL") 
+// // pal miners
+// // pal div
+// // pal short
+// f_triggerRsi("LSE:1PAS")
+
+// // pla phy
+// // pla options
+// f_triggerRsi("LSE:LPLA")
+// // pla miners
+// // pla div
+// // pla short
+
+// // copper phy
+// f_triggerRsi("LSE:TCOP")
+// // copper options
+// f_triggerRsi("LSE:3HCL") 
+// // copper miners
+// // copper div
+// // copper short
+// f_triggerRsi("LSE:3HCS") 
+
+// // leed phy
+// // leed options
+// // leed miners
+// // leed div
+// // leed short
+
+// // iron ore phy
+// // iron ore options
+// // iron ore miners
+// // iron ore div
+// // iron ore short
+
+// // zinc phy
+// // zinc options
+// // zinc miners
+// // zinc div
+// // zinc short
+
+// // ALUMINIUM phy
+// // ALUMINIUM options
+// f_triggerRsi("LSE:LALU")
+// // ALUMINIUM miners
+// // ALUMINIUM div
+// // ALUMINIUM short
+
+// // nickel phy
+// f_triggerRsi("LSE:TNIK")
+
+// // f_triggerRsi("LSE:NICK")
+
+// // nickel options
+// f_triggerRsi("LSE:LNIK")
+// // nickel miners
+// f_triggerRsi("ASX:NIC")
+// // nickel div
+// // nickel short
+// f_triggerRsi("LSE:SNIK")
+
+
+
+// // soy phy
+// // soy options
+// // soy miners
+// f_triggerRsi("AMEX:SOYB")
+// // soy div
+// // soy short
+
+// // corn phy
+// // corn options
+// // corn miners
+// f_triggerRsi("AMEX:CORN")
+// // corn div
+// // corn short
+
+// // cotton phy
+// // cotton options
+// // cotton miners
+// f_triggerRsi("LSE:COTN")
+// // cotton div
+// // cotton short
+
+// // wheat phy
+// // wheat options
+// f_triggerRsi("LSE:3WHL")
+// // wheat miners
+// // wheat div
+// // wheat short
+
+// // sugar phy
+// // sugar options
+// f_triggerRsi("LSE:3SUL")
+// // sugar miners
+// // sugar div
+// // sugar short
+
+// // coffee phy
+// // coffee options
+// f_triggerRsi("LSE:LCFE")
+// // coffee miners
+// // coffee div
+// // coffee short
+
+// // coc phy
+// // coc options
+// f_triggerRsi("LSE:LCOC")
+// // coc miners
+// // coc div
+// // coc short
+
+
+// //bit
+// //bit short
+
+// // f_triggerRsi("NASDAQ:SQQQ")
+
+// f_triggerRsi("TASE:BONS")
+// f_triggerRsi("TASE:LUMI")
+// f_triggerRsi("TASE:MGRT")
+// f_triggerRsi("TASE:MNRT")
+
+// // f_triggerRsi("LSE:3NFE")
+// // f_triggerRsi("LSE:NVD3")
+
+f_triggerRsi("NASDAQ:NVDA")
+
+
+////////
+
+
+
+// // indicator('one_indicator_UCS_Stochastic Momentum Index', shorttitle='oneindicator_UCS_SMI', overlay=false)
+
+// study ('Ami_Trade_Test_Indicator_scriptone', shorttitle='Ami_Trade_Test_Indicator_scriptone', overlay= true)
+
+
+// // ---- //
+// //      //
+// //      //
+// // -  - //
+// //      //
+// //      //
+// // ---- //
+
+
+// // # ========================================================================= #
+// // # sub indicators numbers
+// // # ========================================================================= #
+
+// // --first indicator-- //
+
+// // # ========================================================================= #
+// // input variables, function
+// // # ========================================================================= #
+
+// f_triggerRsi(_ticker)=> // function
+//     _r = rsi(close, 7)
+//     _x = crossover(_r,70)
+//     _y = crossunder(_r,30)
+//     _rt = barstate.isrealtime
+
+
+// // # ========================================================================= #
+// // Calculation
+// // # ========================================================================= #
+
+// [_rsi, _co, _cu, _rt_bar] = security(_ticker, timeframe.period, [_r, _x, _y, _rt])
+// _msg = _ticker + ", " + timeframe.period + ": "
+
+
+
+
+// // # ========================================================================= #
+// // alerts Conditions, trade definitions (for the specific indicator)
+// // # ========================================================================= #
+
+// if _co and _rt_bar
+//     _msg := _msg + "RSI (" + tostring(_rsi) + ") crossing up 70 level"
+//     alert(_msg,  alert.freq_once_per_bar_close) // *** like this 
+// else if _cu and _rt_bar
+//     _msg := _msg + "RSI (" + tostring(_rsi) + ")  crossing down 30 level"
+//     alert(_msg,  alert.freq_once_per_bar_close)  // *** like this 
+
+
+// // # ========================================================================= #
+// // All PLOTS
+// // # ========================================================================= #
+
+// plot(rsi(close, 7), "RSI", color=#8E1599)
+// band1 = hline(70, "Upper Band", color=#C0C0C0)
+// band0 = hline(30, "Lower Band", color=#C0C0C0)
+// fill(band1, band0, color=color.new(#9915FF,90), title="Background")
+
+// // # ========================================================================= #
+// // compound alerts
+// // # ========================================================================= #
+
+// // # ========================================================================= #
+// // tsecurities alerts trigerring
+// // # ========================================================================= #
+
+// f_triggerRsi(syminfo.tickerid)
+// f_triggerRsi("NASDAQ:MSFT")
+// f_triggerRsi("FX:EURUSD")
+// f_triggerRsi("NASDAQ:TSLA")
+// f_triggerRsi("NASDAQ:PYPL")
+// f_triggerRsi("LSE:3HCS")
+// f_triggerRsi("LSE:2PAL")
+
+// //f_triggerRsi("TASE:BONS")
+
+
+// ///////////////////
+
+
+
+
+
+
+
+//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////
 //@version=4
 study("alert() with multiple symbols")
 f_triggerRsi(_ticker)=>
@@ -37,11 +504,346 @@ f_triggerRsi("NASDAQ:PYPL")
 
 // # ========================================================================= #
 
+f_triggerRsi(_ticker)=>
+    rsi_r = rsi(close, 7)
+    rsi_x = crossover(rsi_r,50)
+    rsi_y = crossunder(rsi_r,50)
+    rsi_rt = barstate.isrealtime
+    
+    [rsi_rsi, rsi_co, rsi_cu, rsi_rt_bar] = security(rsi_ticker, timeframe.period, [rsi_r, rsi_x, rsi_y, rsi_rt])
+    
+    rsi_msg = rsi_ticker + ", " + timeframe.period + ": "
+    
+    if rsi_co and rsi_rt_bar
+        rsi_msg := rsi_msg + "RSI (" + tostring(rsi_rsi) + ") crossing up 70 level"
+        alert(rsi_msg,  alert.freq_once_per_bar_close) // *** like this 
+    else if _cu and _rt_bar
+        rsi_msg := rsi_msg + "RSI (" + tostring(rsi_rsi) + ")  crossing down 30 level"
+        alert(rsi_msg,  alert.freq_once_per_bar_close)  // *** like this 
+
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+        
+// Period = input(20, minval=1)
+// hline(0, color=purple, linestyle=line)
+// xStdDev = stdev(close, Period)
+// xMA = sma(close, Period)
+// nRes = (close - xMA) / xStdDev
+// plot(nRes, color=blue, title="Z-Score")
+
+// # ========================================================================= #
+
+
+
+
+
+
+
+
+
+
+
+
+
+f_triggerSma(_ticker)=>
+    _s  = sma(close, 14)
+    // sma_s  = sma(close, 14)
+    _co = crossover(close, _s)
+    _cu = crossunder(close, _s)
+    
+    if _co
+        alert("Price (" + tostring(close) + ") crossing up SMA (" + tostring(_s) + ")", alert.freq_once_per_bar)
+    else if _cu
+        alert("Price (" + tostring(close) + ") crossing down SMA (" + tostring(_s) + ")", alert.freq_once_per_bar)
+
+
+f_triggerSma(_ticker)=>
+    sma_r = sma(close, 14)
+    sma_x = crossover(close, sma_r)
+    sma_y = crossunder(close, sma_r)
+    sma_rt = barstate.isrealtime
+    
+    [sma_sma, sma_co, sma_cu, sma_rt_bar] = security(rsi_ticker, timeframe.period, [sma_r, sma_x, sma_y, sma_rt])
+    
+    rsi_msg = rsi_ticker + ", " + timeframe.period + ": "
+    
+    if rsi_co and rsi_rt_bar
+        rsi_msg := rsi_msg + "RSI (" + tostring(rsi_rsi) + ") crossing up 70 level"
+        alert(rsi_msg,  alert.freq_once_per_bar_close) // *** like this 
+    else if _cu and _rt_bar
+        rsi_msg := rsi_msg + "RSI (" + tostring(rsi_rsi) + ")  crossing down 30 level"
+        alert(rsi_msg,  alert.freq_once_per_bar_close)  // *** like this 
+
+// ---- //
+//      //
+//      //
+// -  - //
+//      //
+//      //
+// ---- //
+
+
+// # ========================================================================= #
+f_triggerComulative(_ticker)=>
+    // # ========================================================================= #
+    sma_s  = sma(close, 14)
+    //sma_co = crossover(close, sma_s)
+    sma_co = close > sma_s
+    sma_cu = close < sma_s 
+    // # ========================================================================= #
+    comrsi_r  = rsi(close, 7)
+    comrsi_co = comrsi_r > 50
+    comrsi_cu = comrsi_r < 50    
+    // # ========================================================================= #
+    mom_m  = mom(close, 14)
+    mom_co = mom_m > 0
+    mom_cu = mom_m < 0
+
+// # ========================================================================= #
+
+    com_rt = barstate.isrealtime
+
+    // # ========================================================================= #
+    
+    // [_rsi, _co, _cu, _rt_bar] = security(_ticker, timeframe.period, [_r, _x, _y, com_rt])
+    // _msg = _ticker + ", " + timeframe.period + ": "
+
+
+    if sma_co and comrsi_co and mom_co and mom_ com_rt
+            alert("commulative_bull (" + tostring(mom_m) + tostring(comrsi_r) + tostring(sma_s) + ")  crossing up TBD level", alert.freq_once_per_bar_close)
+    else if sma_cu and comrsi_cu and mom_cu and com_rt
+            alert("commulative_bear (" + tostring(mom_m) + tostring(comrsi_r) + tostring(sma_s) + ")  crossing down TBD level", alert.freq_once_per_bar_close)
+
+
+
+plot(sma(close, 14), "SMA")
+f_triggerComulative(_ticker)=>
+
+
+f_triggerRsi(syminfo.tickerid)
+
+f_triggerComulative(_ticker)=>
+f_triggerComulative(syminfo.tickerid)
+
+// MKT bull
+// MKT bear
+f_triggerComulative("AMEX:UVIX")
+
+// gold phy
+f_triggerComulative("AMEX:AAAU")
+// gold options
+f_triggerComulative("LSE:3GOL")
+// gold miners
+f_triggerComulative("AMEX:NUGT")
+// gold div
+f_triggerComulative("NASDAQ:GLDI")
+// gold short
+f_triggerComulative("AMEX:DUST")
+f_triggerComulative("LSE:3GOS")
+
+// silver phy
+// silver options
+f_triggerComulative("LSE:3SIL")
+// silver miners
+// silver div
+f_triggerComulative("NASDAQ:SLVO")
+// silver short
+f_triggerComulative("LSE:3SIS")
+
+// oil phy
+// oil options
+f_triggerComulative("LSE:3OIL")
+// oil miners
+// oil div
+// oil short
+f_triggerComulative("LSE:3OIS")
+
+// nlg phy
+// nlg options
+f_triggerComulative("LSE:3NGL")
+// nlg miners
+// nlg div
+// nlg short
+f_triggerComulative("LSE:3NGS")
+
+// URANIUM phy
+// URANIUM options
+// URANIUM miners
+// URANIUM div
+// URANIUM short
+
+
+// MOLYBDENUM
+
+// lumber
+
+// MAGNESIUM
+
+// TITANIUM
+
+// RHODIUM
+
+// pal phy
+f_triggerComulative("LSE:PHPD")
+// pal options
+f_triggerComulative("LSE:2PAL") 
+// pal miners
+// pal div
+// pal short
+f_triggerComulative("LSE:1PAS")
+
+// pla phy
+// pla options
+f_triggerComulative("LSE:LPLA")
+// pla miners
+// pla div
+// pla short
+
+// copper phy
+f_triggerComulative("LSE:TCOP")
+// copper options
+f_triggerComulative("LSE:3HCL") 
+// copper miners
+// copper div
+// copper short
+f_triggerComulative("LSE:3HCS") 
+
+// leed phy
+// leed options
+// leed miners
+// leed div
+// leed short
+
+// iron ore phy
+// iron ore options
+// iron ore miners
+// iron ore div
+// iron ore short
+
+// zinc phy
+// zinc options
+// zinc miners
+// zinc div
+// zinc short
+
+// ALUMINIUM phy
+// ALUMINIUM options
+f_triggerComulative("LSE:LALU")
+// ALUMINIUM miners
+// ALUMINIUM div
+// ALUMINIUM short
+
+// nickel phy
+f_triggerComulative("LSE:TNIK")
+f_triggerComulative("LSE:NICK")
+// nickel options
+f_triggerComulative("LSE:LNIK")
+// nickel miners
+f_triggerComulative("ASX:NIC")
+// nickel div
+// nickel short
+f_triggerComulative("LSE:SNIK")
+
+
+
+// soy phy
+// soy options
+// soy miners
+f_triggerComulative("AMEX:SOYB")
+// soy div
+// soy short
+
+// corn phy
+// corn options
+// corn miners
+f_triggerComulative("AMEX:CORN")
+// corn div
+// corn short
+
+// cotton phy
+// cotton options
+// cotton miners
+f_triggerComulative("LSE:COTN")
+// cotton div
+// cotton short
+
+// wheat phy
+// wheat options
+f_triggerComulative("LSE:3WHL")
+// wheat miners
+// wheat div
+// wheat short
+
+// sugar phy
+// sugar options
+f_triggerComulative("LSE:3SUL")
+// sugar miners
+// sugar div
+// sugar short
+
+// coffee phy
+// coffee options
+f_triggerComulative("LSE:LCFE")
+// coffee miners
+// coffee div
+// coffee short
+
+// coc phy
+// coc options
+f_triggerComulative("LSE:LCOC")
+// coc miners
+// coc div
+// coc short
+
+
+//bit
+//bit short
+
+// f_triggerComulative("NASDAQ:SQQQ")
+
+f_triggerComulative("TASE:BONS")
+f_triggerComulative("TASE:LUMI")
+f_triggerComulative("TASE:MGRT")
+f_triggerComulative("TASE:MNRT")
+
+f_triggerComulative("LSE:3NFE")
+
+
+
+
+// f_triggerSma()
+// f_triggerRsi()
+// f_triggerMom()
+
+// commulative. all.
+
+// # ========================================================================= #
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //@version=4
 study("alert() with multiple indicators", overlay=true)
+
+// var:
+// add sar, zscore, ucs, other signals
+// only bull
+
 f_triggerSma()=>
     _s  = sma(close, 14)
+    // sma_s  = sma(close, 14)
     _co = crossover(close, _s)
     _cu = crossunder(close, _s)
     if _co
@@ -50,6 +852,7 @@ f_triggerSma()=>
         alert("Price (" + tostring(close) + ") crossing down SMA (" + tostring(_s) + ")", alert.freq_once_per_bar)
 f_triggerRsi()=>
     _r  = rsi(close, 7)
+    // rsi_r  = rsi(close, 7)
     _co = crossover(_r, 70)
     _cu = crossunder(_r, 30)
     if _co
@@ -64,6 +867,16 @@ f_triggerMom()=>
         alert("Momentum (" + tostring(_m) + ")  crossing up 0 level", alert.freq_once_per_bar)
     else if _cu
         alert("Momentum (" + tostring(_m) + ")  crossing down 0 level", alert.freq_once_per_bar)
+
+// change var name for each func
+// if all alerts // 
+// all like orig
+
+// _rt = barstate.isrealtime
+//     [_rsi, _co, _cu, _rt_bar] = security(_ticker, timeframe.period, [_r, _x, _y, _rt])
+// if _co and _rt_bar
+//         _msg := _msg + "RSI (" + tostring(_rsi) + ") crossing up 70 level"
+//         alert(_msg,  alert.freq_once_per_bar_close) // *** like this 
 
 plot(sma(close, 14), "SMA")
 f_triggerSma()
